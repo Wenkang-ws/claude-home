@@ -1,0 +1,98 @@
+{
+  "teamId": "01ff1a40-98ea-4704-9fd8-b259c395878d",
+  "name": "Workstream",
+  "ticketPrefix": "WOR",
+  "ticketSystem": "linear",
+  "states": {
+    "backlog":     "22878739-c56b-41be-b3ba-c2509828b90a",
+    "todo":        "31f994fc-9906-4c76-bb93-a7725863b950",
+    "inProgress":  "16916f8f-338e-45a9-a990-cd547b88e7de",
+    "humanReview": "8c3add61-505e-4d07-9553-24ff2615c98c",
+    "inReview":    "a25ea297-6349-4fc5-b45a-fc629fea8d88",
+    "rework":      "bf2a6df9-b864-44f2-bbaf-4a45a1f64c7b",
+    "merging":     "f9c38f87-36e7-4257-8b1f-7f1ea2ebdd82",
+    "done":        "7083ed9a-e26f-4f17-b0ca-7f53c88b17e6"
+  },
+  "defaultRepo": "workstream-mono",
+  "repos": [
+    {
+      "name": "workstream-mono",
+      "path": "~/Documents/workstream-mono",
+      "worktreesDir": "~/Documents/workstream-mono-worktrees",
+      "defaultBranch": "master",
+      "github": "helloworld1812/workstream-mono",
+      "isMono": true,
+      "setup": {
+        "symlinkNodeModules": true,
+        "installCommand": "CI=true pnpm install --frozen-lockfile --quiet",
+        "installCheck": "pnpm-lock.yaml"
+      }
+    }
+  ],
+  "projects": [
+    {
+      "linearProjectId": "5bd2d7bf-8967-4dfd-85ba-2217b8481b5e",
+      "name": "Symphony",
+      "primaryRepo": "workstream-mono",
+      "repos": [
+        { "name": "workstream-mono", "path": "~/Documents/workstream-mono/symphony" }
+      ]
+    },
+    {
+      "linearProjectId": "d3cffc8e-3bae-41b2-ab45-dddf9e540b9c",
+      "name": "On-Demand Interviews",
+      "primaryRepo": "workstream-mono",
+      "repos": [
+        { "name": "workstream-mono", "path": "~/Documents/workstream-mono/apps/on-demand-interviews" }
+      ]
+    },
+    {
+      "linearProjectId": "a4efd39d-b749-4297-a943-87d2b09947ed",
+      "name": "ws ai components",
+      "primaryRepo": "workstream-mono",
+      "repos": [
+        { "name": "workstream-mono", "path": "~/Documents/workstream-mono/apps/ws-ai-components" }
+      ]
+    },
+    {
+      "linearProjectId": "413b8dee-ba93-46a0-bbcc-b7de627c1599",
+      "name": "web mcp",
+      "primaryRepo": "workstream-mono",
+      "repos": [
+        { "name": "workstream-mono", "path": "~/Documents/workstream-mono" }
+      ]
+    },
+    {
+      "linearProjectId": "d2f0e69c-a40f-4a2c-839d-a7657a4e9a70",
+      "name": "ws-mfe-parent",
+      "primaryRepo": "workstream-mono",
+      "repos": [
+        { "name": "workstream-mono", "path": "~/Documents/workstream-mono/apps/ws-mfe-parent" }
+      ]
+    },
+    {
+      "linearProjectId": "7cf84d1a-f44c-4ea8-b878-c6ba0848abb3",
+      "name": "hiring(mono)",
+      "primaryRepo": "workstream-mono",
+      "repos": [
+        { "name": "workstream-mono", "path": "~/Documents/workstream-mono/apps/hiring" }
+      ]
+    },
+    {
+      "linearProjectId": "0b2dfe3f-81d0-4006-8c1f-9144749cefc4",
+      "name": "HR(workstream-hr)",
+      "primaryRepo": "workstream-mono",
+      "repos": [
+        { "name": "workstream-mono", "path": "~/Documents/workstream-mono/apps/hris" }
+      ]
+    },
+    {
+      "linearProjectId": "6af6ba08-4e61-4603-9a11-b69ac8e5cec7",
+      "name": "Frontend KTLO",
+      "primaryRepo": "workstream-mono",
+      "repos": [
+        { "name": "workstream-mono", "path": "~/Documents/workstream-mono" }
+      ]
+    }
+  ]
+}
