@@ -45,7 +45,7 @@ If any code changed:
 
 1. Re-run lint and tests: `nx affected --target=lint,test --base=origin/master`
 2. Push changes
-3. Confirm CI is green (read `$SYMPHONY_ROOT/skills/validate/SKILL.md` Step 3)
+3. Confirm CI is green (read `$SKILLS_ROOT/validate/SKILL.md` Step 3)
 
 ## Step 4 — Confirm ready
 

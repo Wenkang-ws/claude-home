@@ -1,5 +1,5 @@
-# Global Claude Code Instructions
+# 全局 Claude Code 指令
 
-## Language
+## 语言
 
-Always respond in Chinese (Simplified). Never use Korean or Japanese.
+始终用简体中文回复。不得使用韩语或日语。

@@ -30,7 +30,7 @@ Check if `<nx-project-path>/WORKFLOW.md` exists for the affected project (e.g. `
 
 If no Figma link is present, skip to Step 4.
 
-If a Figma link is present, **run `$SYMPHONY_ROOT/skills/figma-audit/SKILL.md` now, before writing any code.** Paste the resulting per-frame change checklist into the workpad. If the audit triggers a scope mismatch and moves the ticket to Backlog, exit immediately.
+If a Figma link is present, **run `$SKILLS_ROOT/figma-audit/SKILL.md` now, before writing any code.** Paste the resulting per-frame change checklist into the workpad. If the audit triggers a scope mismatch and moves the ticket to Backlog, exit immediately.
 
 ## Step 4 — Task size assessment
 
@@ -49,7 +49,7 @@ After the Figma audit (or, if no Figma, after reading the ticket), estimate the 
 
 Find or create the single persistent **Claude Workpad** comment on the ticket.
 
-- If `$TICKET_SYSTEM` is `linear`: read `$SYMPHONY_ROOT/skills/linear/SKILL.md` for the workpad template and API commands
+- If `$TICKET_SYSTEM` is `linear`: read `$SKILLS_ROOT/linear/SKILL.md` for the workpad template and API commands
 - If `$TICKET_SYSTEM` is `jira`: use the Jira MCP tool to add a comment
 
 **Rules:**

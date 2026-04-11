@@ -47,4 +47,4 @@ fi
 - Fix every failing CI check
 - Do not re-implement work that is already done — only fix what is asked for
 
-After addressing all feedback, re-validate (read `$SYMPHONY_ROOT/skills/validate/SKILL.md`) and submit for review (read `$SYMPHONY_ROOT/skills/submit-for-review/SKILL.md`).
+After addressing all feedback, re-validate (read `$SKILLS_ROOT/validate/SKILL.md`) and submit for review (read `$SKILLS_ROOT/submit-for-review/SKILL.md`).
