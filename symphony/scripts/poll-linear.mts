@@ -333,6 +333,7 @@ interface AgentEntry {
   project: string;
   issueId: string;
   boardName: string;
+  ticket: Issue;
   spawnedAt: number;
   spawnedForMerging: boolean;
   worktreePath: string;
@@ -466,6 +467,57 @@ const failureCounts = new Map<string, number>();
 const lastKnownState = new Map<string, string>();
 const RATE_LIMIT_PATTERN = /You've hit your limit|rate.?limit/i;
 
+// Set when a rate-limit is detected; the main loop sleeps until this time.
+let rateLimitPausedUntil: Date | null = null;
+
+interface PausedSession {
+  ticket: Issue;
+  board: BoardConfig;
+  sessionId: string;
+  worktreePath: string;
+}
+let rateLimitPausedSessions: PausedSession[] = [];
+
+/**
+ * Parse the reset time from a Claude Code rate-limit message.
+ * Handles: "You've hit your limit · resets 6pm (Asia/Shanghai)", "resets 18:00 (UTC)", etc.
+ * Returns the next occurrence of that clock time (today or tomorrow) + 5-minute buffer,
+ * or null if parsing fails.
+ */
+function parseRateLimitResetTime(logContent: string): Date | null {
+  const match = logContent.match(
+    /resets\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\s*(?:\(([^)]+)\))?/i
+  );
+  if (!match) return null;
+
+  let hours = parseInt(match[1], 10);
+  const minutes = match[2] ? parseInt(match[2], 10) : 0;
+  const ampm = match[3]?.toLowerCase();
+  const timezone = match[4]?.trim() ?? 'UTC';
+
+  if (ampm === 'pm' && hours !== 12) hours += 12;
+  else if (ampm === 'am' && hours === 12) hours = 0;
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
+
+  try { Intl.DateTimeFormat(undefined, { timeZone: timezone }); } catch { return null; }
+
+  const now = new Date();
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+  });
+  const parts = formatter.formatToParts(now);
+  const get = (type: string) => parseInt(parts.find((p) => p.type === type)!.value, 10);
+
+  const currentSec = get('hour') * 3600 + get('minute') * 60 + get('second');
+  const resetSec = hours * 3600 + minutes * 60;
+  let diffSec = resetSec - currentSec;
+  if (diffSec <= 0) diffSec += 86400;
+
+  // Add 5-minute buffer after the reset time
+  return new Date(now.getTime() + diffSec * 1000 + 5 * 60 * 1000);
+}
+
 // ── Agent runner ──────────────────────────────────────────────────────────────
 
 function isPidAlive(pid: number): boolean {
@@ -565,6 +617,7 @@ function spawnAgent(ticket: Issue, board: BoardConfig, mode: SpawnMode = 'contin
     project: ticket.project?.name ?? '(no project)',
     issueId: ticket.id,
     boardName: board.name,
+    ticket,
     spawnedAt: Date.now(),
     spawnedForMerging: forMerging,
     worktreePath,
@@ -589,23 +642,61 @@ function spawnAgent(ticket: Issue, board: BoardConfig, mode: SpawnMode = 'contin
 
     if (isShuttingDown) {
       log(chalk.yellow(`[${timestamp()}] ⚠ Agent interrupted:`) + ` ${chalk.bold(ticket.identifier)}`);
-    } else if (code !== 0) {
+    } else if (code !== 0 && signal == null) {
+      // Skip rate-limit check for signal-killed processes (SIGTERM from our own cleanup)
       const agentLog = path.join(SYMPHONY_ROOT, 'logs', `symphony-${ticket.identifier}.log`);
       let hitRateLimit = false;
+      let logTail = '';
       try {
         const fd = fs.openSync(agentLog, 'r');
         const stat = fs.fstatSync(fd);
-        const readSize = Math.min(2048, stat.size);
+        const readSize = Math.min(4096, stat.size);
         const buf = Buffer.alloc(readSize);
         fs.readSync(fd, buf, 0, readSize, stat.size - readSize);
         fs.closeSync(fd);
-        hitRateLimit = RATE_LIMIT_PATTERN.test(buf.toString());
+        logTail = buf.toString();
+        hitRateLimit = RATE_LIMIT_PATTERN.test(logTail);
       } catch { /* unreadable */ }
 
       if (hitRateLimit) {
-        log(chalk.red(`[${timestamp()}] ⛔ Rate limit hit: ${ticket.identifier} — stopping all agents`));
+        const resetDate = parseRateLimitResetTime(logTail);
+
+        // Collect session info for all running agents before killing them
+        rateLimitPausedSessions = [];
+        for (const [id, agentEntry] of runningAgents) {
+          const sessionFile = path.join(agentEntry.worktreePath, '.claude-session-id');
+          if (fs.existsSync(sessionFile)) {
+            const sessionId = fs.readFileSync(sessionFile, 'utf8').trim();
+            if (sessionId) {
+              rateLimitPausedSessions.push({
+                ticket: agentEntry.ticket,
+                board: agentEntry.board,
+                sessionId,
+                worktreePath: agentEntry.worktreePath,
+              });
+            }
+          }
+          void id; // suppress unused warning
+        }
+        // Also include the current (already-exited) agent's session
+        if (!runningAgents.has(ticket.identifier)) {
+          const sessionFile = path.join(agent?.worktreePath ?? '', '.claude-session-id');
+          if (agent?.worktreePath && fs.existsSync(sessionFile)) {
+            const sessionId = fs.readFileSync(sessionFile, 'utf8').trim();
+            if (sessionId) rateLimitPausedSessions.push({ ticket, board, sessionId, worktreePath: agent.worktreePath });
+          }
+        }
+
         for (const { proc } of runningAgents.values()) proc.kill('SIGTERM');
-        process.exit(1);
+
+        if (resetDate) {
+          const pauseMs = Math.max(0, resetDate.getTime() - Date.now());
+          log(chalk.yellow(`[${timestamp()}] ⏸ Rate limit hit: ${chalk.bold(ticket.identifier)} — pausing until ${resetDate.toLocaleTimeString()} (~${Math.ceil(pauseMs / 60000)}min, incl. +5min buffer)`));
+          rateLimitPausedUntil = resetDate;
+        } else {
+          log(chalk.red(`[${timestamp()}] ⛔ Rate limit hit: ${ticket.identifier} — could not parse reset time, stopping poller`));
+          process.exit(1);
+        }
       } else {
         const failures = (failureCounts.get(ticket.identifier) ?? 0) + 1;
         failureCounts.set(ticket.identifier, failures);
@@ -1020,6 +1111,68 @@ console.log(chalk.dim('  Ctrl+C to stop safely'));
 console.log('');
 
 while (true) {
+  // If a rate-limit pause is active, sleep in-place until the window expires
+  if (rateLimitPausedUntil) {
+    const pauseMs = rateLimitPausedUntil.getTime() - Date.now();
+    if (pauseMs > 0) {
+      log(chalk.yellow(`[${timestamp()}] ⏸ Rate-limited — sleeping ${Math.ceil(pauseMs / 60000)}min until ${rateLimitPausedUntil.toLocaleTimeString()}`));
+      await sleep(pauseMs);
+    }
+    rateLimitPausedUntil = null;
+    log(chalk.green(`[${timestamp()}] ▶ Rate-limit window expired — resuming`));
+
+    // Resume each paused session with a continuation message
+    const sessionsToResume = rateLimitPausedSessions.splice(0);
+    for (const { ticket: pausedTicket, board: pausedBoard, sessionId, worktreePath } of sessionsToResume) {
+      log(chalk.cyan(`[${timestamp()}] ↩ Resuming session:`) + ` ${chalk.bold(pausedTicket.identifier)} (session ${sessionId.slice(0, 8)}…)`);
+      const logsDir = path.join(SYMPHONY_ROOT, 'logs');
+      fs.mkdirSync(logsDir, { recursive: true });
+      const logFile = path.join(logsDir, `symphony-${pausedTicket.identifier}.log`);
+      const logFd = fs.openSync(logFile, 'a');
+      const activePidFile = path.join(logsDir, `agent-pid-${pausedTicket.identifier}.pid`);
+
+      const child = child_process.spawn(
+        'claude',
+        ['--dangerously-skip-permissions', '--resume', sessionId, '--print', 'rate limit 解除了，继续'],
+        { cwd: worktreePath, stdio: ['ignore', logFd, logFd], detached: false }
+      );
+
+      if (child.pid !== undefined) fs.writeFileSync(activePidFile, String(child.pid));
+
+      runningAgents.set(pausedTicket.identifier, {
+        proc: child,
+        project: pausedTicket.project?.name ?? '(no project)',
+        issueId: pausedTicket.id,
+        boardName: pausedBoard.name,
+        ticket: pausedTicket,
+        spawnedAt: Date.now(),
+        spawnedForMerging: false,
+        worktreePath,
+        board: pausedBoard,
+      });
+
+      child.on('error', (err) => {
+        fs.rmSync(activePidFile, { force: true });
+        runningAgents.delete(pausedTicket.identifier);
+        log(chalk.red(`[${timestamp()}] ✗ Resume spawn error: ${pausedTicket.identifier} — ${err.message}`));
+        renderDashboard();
+      });
+
+      child.on('exit', (exitCode) => {
+        fs.rmSync(activePidFile, { force: true });
+        runningAgents.delete(pausedTicket.identifier);
+        if (exitCode === 0) {
+          log(chalk.green(`[${timestamp()}] ✓ Resumed agent done: ${chalk.bold(pausedTicket.identifier)}`));
+          moveToHumanReview(pausedBoard, pausedTicket.id, pausedTicket.identifier).catch(() => {});
+        } else {
+          log(chalk.red(`[${timestamp()}] ✗ Resumed agent failed: ${chalk.bold(pausedTicket.identifier)} (exit ${exitCode})`));
+        }
+        renderDashboard();
+      });
+
+      await sleep(2000); // stagger spawns
+    }
+  }
   await poll();
   await sleep(POLL_INTERVAL_MS);
 }
