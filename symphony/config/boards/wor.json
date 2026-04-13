@@ -3,6 +3,7 @@
   "name": "Workstream",
   "ticketPrefix": "WOR",
   "ticketSystem": "linear",
+  "code-review-comment": "@Workstream GitHub actions, review",
   "states": {
     "backlog":     "22878739-c56b-41be-b3ba-c2509828b90a",
     "todo":        "31f994fc-9906-4c76-bb93-a7725863b950",
@@ -13,6 +14,7 @@
     "merging":     "f9c38f87-36e7-4257-8b1f-7f1ea2ebdd82",
     "done":        "7083ed9a-e26f-4f17-b0ca-7f53c88b17e6"
   },
+  "code-review-comment": "@Workstream GitHub actions, review",
   "defaultRepo": "workstream-mono",
   "repos": [
     {
