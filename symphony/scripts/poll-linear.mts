@@ -249,6 +249,63 @@ const moveToDone = (b: BoardConfig, id: string, ident: string) =>
   moveToState(b, id, ident, 'done', 'Done ✓', chalk.green);
 const moveToInReview = (b: BoardConfig, id: string, ident: string) =>
   moveToState(b, id, ident, 'inReview', 'In Review', chalk.blue);
+const moveToTodo = (b: BoardConfig, id: string, ident: string) =>
+  moveToState(b, id, ident, 'todo', 'Todo (reset from Rework)', chalk.cyan);
+
+/**
+ * Handle a Rework ticket: close the old PR, delete the Linear workpad comment,
+ * remove the local worktree, then move the ticket back to Todo.
+ * The next poll cycle will pick it up as a normal Todo ticket and spawn fresh.
+ */
+async function resetReworkTicket(issue: Issue, board: BoardConfig): Promise<void> {
+  const { identifier } = issue;
+  log(chalk.red(`[${timestamp()}] ↩ Rework: resetting ${chalk.bold(identifier)}`));
+
+  const repo = resolveRepo(issue, board);
+  const repoPath = repo.path.replace(/^~/, process.env['HOME'] ?? '~');
+  const worktreesDir = repo.worktreesDir.replace(/^~/, process.env['HOME'] ?? '~');
+  const slug = issue.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+/g, '-').slice(0, 40).replace(/-$/, '');
+  const branch = `feat/${identifier}-${slug}`;
+  const worktreePath = path.join(worktreesDir, branch.replace(/\//g, '--'));
+
+  // 1. Close the open PR (best-effort)
+  try {
+    const result = child_process.spawnSync(
+      'gh', ['pr', 'list', '--head', branch, '--json', 'number', '--jq', '.[0].number'],
+      { encoding: 'utf8', cwd: repoPath }
+    );
+    const prNumber = result.stdout.trim();
+    if (prNumber && prNumber !== 'null') {
+      child_process.spawnSync('gh', ['pr', 'close', prNumber, '--delete-branch'], { encoding: 'utf8', cwd: repoPath });
+      log(chalk.dim(`[symphony] Closed PR #${prNumber} for ${identifier}`));
+    }
+  } catch { /* best-effort */ }
+
+  // 2. Delete the Claude Workpad comment on Linear (best-effort)
+  try {
+    const data = await linearQuery<{ issue: { comments: { nodes: { id: string; body: string }[] } } }>(
+      `query GetComments($id: String!) { issue(id: $id) { comments { nodes { id body } } } }`,
+      { id: issue.id }
+    );
+    const workpad = data.issue.comments.nodes.find((c) => c.body.includes('## Claude Workpad'));
+    if (workpad) {
+      await linearQuery(`mutation DeleteComment($id: String!) { commentDelete(id: $id) { success } }`, { id: workpad.id });
+      log(chalk.dim(`[symphony] Deleted workpad comment for ${identifier}`));
+    }
+  } catch { /* best-effort */ }
+
+  // 3. Remove local worktree (best-effort)
+  try {
+    if (fs.existsSync(worktreePath)) {
+      child_process.spawnSync('git', ['worktree', 'remove', '--force', worktreePath], { encoding: 'utf8', cwd: repoPath });
+      child_process.spawnSync('git', ['worktree', 'prune'], { encoding: 'utf8', cwd: repoPath });
+      log(chalk.dim(`[symphony] Removed worktree for ${identifier}`));
+    }
+  } catch { /* best-effort */ }
+
+  // 4. Move ticket back to Todo — next poll cycle picks it up fresh
+  await moveToTodo(board, issue.id, identifier);
+}
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 
@@ -750,26 +807,27 @@ async function poll(): Promise<void> {
   const allActiveIdentifiers = new Set<string>();
 
   for (const board of boards) {
-    let todoTickets: Issue[], inProgressTickets: Issue[], humanReviewTickets: Issue[], mergingTickets: Issue[];
+    let todoTickets: Issue[], inProgressTickets: Issue[], humanReviewTickets: Issue[], mergingTickets: Issue[], reworkTickets: Issue[];
     try {
-      [todoTickets, inProgressTickets, humanReviewTickets, mergingTickets] = await Promise.all([
+      [todoTickets, inProgressTickets, humanReviewTickets, mergingTickets, reworkTickets] = await Promise.all([
         fetchTicketsByState(board.teamId, board.states.todo),
         fetchTicketsByState(board.teamId, board.states.inProgress),
         fetchTicketsByState(board.teamId, board.states.humanReview),
         fetchTicketsByState(board.teamId, board.states.merging),
+        fetchTicketsByState(board.teamId, board.states.rework),
       ]);
     } catch (err) {
       log(chalk.red(`[${timestamp()}] Linear API error (${board.name}): ${err}`));
       continue;
     }
 
-    for (const t of [...todoTickets, ...inProgressTickets, ...humanReviewTickets, ...mergingTickets]) {
+    for (const t of [...todoTickets, ...inProgressTickets, ...humanReviewTickets, ...mergingTickets, ...reworkTickets]) {
       allActiveIdentifiers.add(t.identifier);
     }
 
     // Kill agents whose tickets moved out of active states
     const SETTLE_MS = 30_000;
-    const activeInBoard = new Set([...inProgressTickets.map((t) => t.identifier), ...mergingTickets.map((t) => t.identifier)]);
+    const activeInBoard = new Set([...inProgressTickets.map((t) => t.identifier), ...mergingTickets.map((t) => t.identifier), ...reworkTickets.map((t) => t.identifier)]);
     for (const [identifier, agent] of runningAgents) {
       if (agent.boardName !== board.name) continue;
       if (Date.now() - agent.spawnedAt < SETTLE_MS) continue;
@@ -809,6 +867,19 @@ async function poll(): Promise<void> {
       await sleep(3000);
     }
 
+    // Rework = reviewer requested a full reset.
+    // Poller handles cleanup (close PR, delete workpad, remove worktree) then
+    // moves ticket back to Todo. Next poll cycle picks it up as a fresh Todo.
+    for (const issue of reworkTickets.filter((t) => isEligible(t, board))) {
+      if (runningAgents.has(issue.identifier)) continue; // wait for running agent to exit first
+      try {
+        await resetReworkTicket(issue, board);
+      } catch (err) {
+        log(chalk.red(`[symphony] Error resetting rework ticket ${issue.identifier}: ${err}`));
+      }
+      await sleep(2000);
+    }
+
     // Resume stale In Progress
     const stale = inProgressTickets.filter(
       (t) => isEligible(t, board) && !runningAgents.has(t.identifier) && (failureCounts.get(t.identifier) ?? 0) < MAX_RETRIES
@@ -837,6 +908,7 @@ async function poll(): Promise<void> {
     for (const t of inProgressTickets) lastKnownState.set(t.identifier, 'In Progress');
     for (const t of humanReviewTickets) lastKnownState.set(t.identifier, 'Human Review');
     for (const t of mergingTickets) lastKnownState.set(t.identifier, 'Merging');
+    for (const t of reworkTickets) lastKnownState.set(t.identifier, 'Rework');
 
     await cleanupDoneWorktrees(allActiveIdentifiers, board);
   }
