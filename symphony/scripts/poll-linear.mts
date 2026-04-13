@@ -270,36 +270,52 @@ async function resetReworkTicket(issue: Issue, board: BoardConfig): Promise<void
 
   // 1. Close the open PR (best-effort)
   try {
-    const result = child_process.spawnSync(
+    const listResult = child_process.spawnSync(
       'gh', ['pr', 'list', '--head', branch, '--json', 'number', '--jq', '.[0].number'],
       { encoding: 'utf8', cwd: repoPath }
     );
-    const prNumber = result.stdout.trim();
+    const prNumber = listResult.stdout.trim();
     if (prNumber && prNumber !== 'null') {
-      child_process.spawnSync('gh', ['pr', 'close', prNumber, '--delete-branch'], { encoding: 'utf8', cwd: repoPath });
-      log(chalk.dim(`[symphony] Closed PR #${prNumber} for ${identifier}`));
+      const closeResult = child_process.spawnSync('gh', ['pr', 'close', prNumber, '--delete-branch'], { encoding: 'utf8', cwd: repoPath });
+      if (closeResult.status === 0) {
+        log(chalk.dim(`[symphony] Closed PR #${prNumber} for ${identifier}`));
+      } else {
+        log(chalk.yellow(`[symphony] Failed to close PR #${prNumber} for ${identifier}: ${closeResult.stderr?.trim()}`));
+      }
     }
   } catch { /* best-effort */ }
 
-  // 2. Delete the Claude Workpad comment on Linear (best-effort)
+  // 2. Delete stale lock comments + workpad on Linear (best-effort)
   try {
     const data = await linearQuery<{ issue: { comments: { nodes: { id: string; body: string }[] } } }>(
       `query GetComments($id: String!) { issue(id: $id) { comments { nodes { id body } } } }`,
       { id: issue.id }
     );
-    const workpad = data.issue.comments.nodes.find((c) => c.body.includes('## Claude Workpad'));
-    if (workpad) {
-      await linearQuery(`mutation DeleteComment($id: String!) { commentDelete(id: $id) { success } }`, { id: workpad.id });
-      log(chalk.dim(`[symphony] Deleted workpad comment for ${identifier}`));
+    const staleComments = data.issue.comments.nodes.filter((c) =>
+      c.body.includes('## Claude Workpad') ||
+      c.body.startsWith('[symphony] aiReviewRequested:') ||
+      c.body.startsWith('[symphony] developerApproved:')
+    );
+    await Promise.all(
+      staleComments.map((c) =>
+        linearQuery(`mutation DeleteComment($id: String!) { commentDelete(id: $id) { success } }`, { id: c.id })
+      )
+    );
+    if (staleComments.length) {
+      log(chalk.dim(`[symphony] Deleted ${staleComments.length} stale comment(s) for ${identifier}`));
     }
   } catch { /* best-effort */ }
 
   // 3. Remove local worktree (best-effort)
   try {
     if (fs.existsSync(worktreePath)) {
-      child_process.spawnSync('git', ['worktree', 'remove', '--force', worktreePath], { encoding: 'utf8', cwd: repoPath });
-      child_process.spawnSync('git', ['worktree', 'prune'], { encoding: 'utf8', cwd: repoPath });
-      log(chalk.dim(`[symphony] Removed worktree for ${identifier}`));
+      const removeResult = child_process.spawnSync('git', ['worktree', 'remove', '--force', worktreePath], { encoding: 'utf8', cwd: repoPath });
+      if (removeResult.status === 0) {
+        child_process.spawnSync('git', ['worktree', 'prune'], { encoding: 'utf8', cwd: repoPath });
+        log(chalk.dim(`[symphony] Removed worktree for ${identifier}`));
+      } else {
+        log(chalk.yellow(`[symphony] Failed to remove worktree for ${identifier}: ${removeResult.stderr?.trim()}`));
+      }
     }
   } catch { /* best-effort */ }
 
