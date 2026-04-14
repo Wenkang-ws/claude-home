@@ -2,12 +2,12 @@
 /**
  * poll-linear.mts — Poll all configured boards for eligible tickets and run Claude Code agents
  *
- * Reads config from ~/.claude/symphony/config/symphony.json and config/boards/*.json
- * Secrets from ~/.claude/symphony/secrets.env (gitignored)
+ * Reads config from ~/symphony/config/symphony.json and config/boards/*.json
+ * Secrets from ~/symphony/secrets.env (gitignored)
  *
  * Usage:
- *   node --experimental-strip-types ~/.claude/symphony/scripts/poll-linear.mts
- *   node --experimental-strip-types ~/.claude/symphony/scripts/poll-linear.mts --dry-run
+ *   node --experimental-strip-types ~/symphony/scripts/poll-linear.mts
+ *   node --experimental-strip-types ~/symphony/scripts/poll-linear.mts --dry-run
  */
 
 import * as fs from 'node:fs';
@@ -103,7 +103,7 @@ loadSecrets();
 
 const LINEAR_API_KEY = process.env['LINEAR_API_KEY'] ?? '';
 if (!LINEAR_API_KEY) {
-  console.error(chalk.red('ERROR: LINEAR_API_KEY not set in ~/.claude/symphony/secrets.env'));
+  console.error(chalk.red('ERROR: LINEAR_API_KEY not set in ~/symphony/secrets.env'));
   process.exit(1);
 }
 

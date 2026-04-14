@@ -37,13 +37,13 @@ symphony/
 ### Install dependencies
 
 ```bash
-cd ~/.claude/symphony && npm install
+cd ~/symphony && npm install
 ```
 
 ### Secrets
 
 ```bash
-echo "LINEAR_API_KEY=lin_api_YOUR_KEY_HERE" > ~/.claude/symphony/secrets.env
+echo "LINEAR_API_KEY=lin_api_YOUR_KEY_HERE" > ~/symphony/secrets.env
 ```
 
 ### Configure
@@ -52,7 +52,7 @@ echo "LINEAR_API_KEY=lin_api_YOUR_KEY_HERE" > ~/.claude/symphony/secrets.env
 
 ```bash
 # Get your Linear user ID
-source ~/.claude/symphony/secrets.env
+source ~/symphony/secrets.env
 curl -s -X POST https://api.linear.app/graphql \
   -H "Authorization: $LINEAR_API_KEY" \
   -H "Content-Type: application/json" \
@@ -69,10 +69,10 @@ curl -s -X POST https://api.linear.app/graphql \
 pnpm symphony
 
 # Or directly
-cd ~/.claude/symphony && node --experimental-strip-types scripts/poll-linear.mts
+cd ~/symphony && node --experimental-strip-types scripts/poll-linear.mts
 
 # Dry run — polls Linear and prints what would be spawned, no agents started
-cd ~/.claude/symphony && node --experimental-strip-types scripts/poll-linear.mts --dry-run
+cd ~/symphony && node --experimental-strip-types scripts/poll-linear.mts --dry-run
 ```
 
 Only one poller instance is allowed. If already running, it will print the existing PID and exit.
@@ -108,7 +108,7 @@ Each board file (`config/boards/*.json`) defines:
 | `REPO_ROOT`, `WORKTREE_PATH`, `BRANCH` | Derived from repo config |
 | `GITHUB_REPO` | `owner/repo` slug (e.g. `helloworld1812/workstream-mono`) |
 | `PROJECT_PATH` | Monorepo subfolder entry point for the ticket's project |
-| `SYMPHONY_ROOT` | `~/.claude/symphony` |
+| `SYMPHONY_ROOT` | `~/symphony` |
 | `SKILLS_ROOT` | `~/.claude/skills` |
 | `STATE_*` | All Linear state UUIDs from the board config |
 | `LINEAR_API_KEY` | From `secrets.env` |
@@ -119,7 +119,7 @@ Each board file (`config/boards/*.json`) defines:
 → Check that `SYMPHONY=true` is exported. Verify `~/.claude/CLAUDE.md` has the Symphony mode section.
 
 **`Cannot find package 'chalk'`**
-→ Run `cd ~/.claude/symphony && npm install`
+→ Run `cd ~/symphony && npm install`
 
 **Poller says "Already running"**
 → Kill the existing process: `kill <PID>` then restart.

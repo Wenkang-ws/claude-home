@@ -17,7 +17,7 @@
 #   SETUP_INSTALL_CHECK        — lockfile path to diff (e.g. pnpm-lock.yaml)
 #   STATE_BACKLOG / STATE_TODO / STATE_IN_PROGRESS / STATE_HUMAN_REVIEW /
 #   STATE_IN_REVIEW / STATE_REWORK / STATE_MERGING / STATE_DONE
-#   SYMPHONY_ROOT    — path to ~/.claude/symphony
+#   SYMPHONY_ROOT    — path to ~/symphony
 #
 # Usage:
 #   run-ticket.sh <ticket-id> <ticket-title> [ticket-description] [--fresh|--feedback]
