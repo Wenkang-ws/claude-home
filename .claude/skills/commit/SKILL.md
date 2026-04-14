@@ -5,7 +5,7 @@ description: Symphony autonomous version of commit-changes — skips all interac
 
 # Symphony Commit
 
-Follow all rules in `.claude/skills/commit-changes/SKILL.md`, with these overrides:
+Follow all rules in `$SKILLS_ROOT/commit-changes/SKILL.md`, with these overrides:
 
 - **Stage automatically**: run `git add -u` if nothing is staged — do not ask the user
 - **Commit directly**: do not show the commit message for confirmation before committing
@@ -20,7 +20,7 @@ Follow all rules in `.claude/skills/commit-changes/SKILL.md`, with these overrid
 git log --oneline origin/master..HEAD | wc -l
 ```
 
-If > 15 local commits, read `.claude/skills/detangle-commits/SKILL.md` and run it first.
+If > 15 local commits, read `$SKILLS_ROOT/detangle-commits/SKILL.md` and run it first.
 
 ### 2. Accidental file check
 

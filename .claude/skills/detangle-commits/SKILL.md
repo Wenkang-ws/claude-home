@@ -57,4 +57,4 @@ git commit -m "fix(scope): fix Y [WOR-XX]"
 
 ### 5. Rebase onto latest master
 
-After detangling, read `.claude/skills/rebase-latest-master/SKILL.md` and follow Step 1–2 to rebase cleanly.
+After detangling, read `$SKILLS_ROOT/rebase-latest-master/SKILL.md` and follow Step 1–2 to rebase cleanly.

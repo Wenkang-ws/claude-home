@@ -35,13 +35,13 @@ git clone git@github.com:YOUR_USERNAME/claude-home.git ~/.claude
 ### 2. Install Symphony dependencies
 
 ```bash
-cd ~/symphony && npm install
+cd $SYMPHONY_ROOT && npm install
 ```
 
 ### 3. Add secrets
 
 ```bash
-cp ~/symphony/secrets.env.example ~/symphony/secrets.env
+cp $SYMPHONY_ROOT/secrets.env.example $SYMPHONY_ROOT/secrets.env
 # Edit secrets.env and fill in LINEAR_API_KEY
 ```
 
@@ -58,7 +58,7 @@ The Workstream-specific board (`boards/wor.json`) and skills are included as a r
 
 ## Skills
 
-Skills live in `~/.claude/skills/`. Each skill is a Markdown file read by the agent at runtime.
+Skills live in `$SKILLS_ROOT/`. Each skill is a Markdown file read by the agent at runtime.
 
 - **Interactive skills** (called via Skill tool in Claude Code): `commit-changes`, `create-pr`, `start-feature`, etc.
 - **Symphony skills** (called autonomously): `linear`, `read-and-plan`, `setup-worktree`, `validate`, etc.

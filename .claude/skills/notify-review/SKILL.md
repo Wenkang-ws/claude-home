@@ -17,11 +17,11 @@ Then compose and display the message for the user to copy.
 
 ## Gathering Context
 
-1. Read `.claude/skills/prime-project/session-state.md` for:
+1. Read `$SKILLS_ROOT/prime-project/session-state.md` for:
    - **JIRA ID**
    - **Project name** — to load the project config
 
-2. Read `.claude/skills/prime-project/project-configs/{project-name}.json` for:
+2. Read `$SKILLS_ROOT/prime-project/project-configs/{project-name}.json` for:
    - **slack.channelName** — the Slack channel to post in
    - **slack.messageTemplate** — the message template
 
@@ -53,7 +53,7 @@ If the project config has `slack.crossPost`, **ask the user** if they also want 
 ## Post-Send
 
 - Confirm the message was sent (and cross-posted if applicable)
-- **Clear session state** — reset `.claude/skills/prime-project/session-state.md` to the empty template:
+- **Clear session state** — reset `$SKILLS_ROOT/prime-project/session-state.md` to the empty template:
 
 ```markdown
 # Session State

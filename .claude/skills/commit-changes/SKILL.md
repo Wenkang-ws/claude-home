@@ -9,11 +9,11 @@ Create a well-formatted conventional commit with the correct scope and JIRA ID.
 
 ## Gathering Context
 
-1. Read `.claude/skills/prime-project/session-state.md` for:
+1. Read `$SKILLS_ROOT/prime-project/session-state.md` for:
    - **JIRA ID** — if not found, ask the user
    - **Project name** — to load the project config
 
-2. Read `.claude/skills/prime-project/project-configs/{project-name}.json` for:
+2. Read `$SKILLS_ROOT/prime-project/project-configs/{project-name}.json` for:
    - **commitScope** — the scope to use in the commit message
 
 3. If neither session state nor project config is available, ask the user for the scope and JIRA ID directly. The skill works standalone.
@@ -67,5 +67,5 @@ ci(ci): add new GitHub Actions workflow [WS-5678]
 ## Post-Commit
 
 - If branches have diverged and a push is needed, **ask before force pushing** — prefer `--force-with-lease`
-- Update the **Phase** field in `.claude/skills/prime-project/session-state.md` to `implementing` or `testing` as appropriate
+- Update the **Phase** field in `$SKILLS_ROOT/prime-project/session-state.md` to `implementing` or `testing` as appropriate
 - Suggest: "Ready to create a PR? Use `create-pr`."

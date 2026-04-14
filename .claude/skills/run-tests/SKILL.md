@@ -24,7 +24,7 @@ GIT_DIR=$(git rev-parse --git-dir)
 IS_WORKTREE=$( [ "$GIT_COMMON" != "$GIT_DIR" ] && echo "yes" || echo "no" )
 ```
 
-Read `.claude/skills/run-tests/references/worktree-safety.md` for the full safety reference.
+Read `$SKILLS_ROOT/run-tests/references/worktree-safety.md` for the full safety reference.
 
 **If `IS_WORKTREE` is "yes"** — you are in a linked worktree. These rules are MANDATORY:
 
@@ -39,8 +39,8 @@ If you need to check whether a failure is pre-existing, use `git diff master...H
 
 ### Step 2: Gather Context
 
-1. Read `.claude/skills/prime-project/session-state.md` for the current project name, JIRA ID, and phase
-2. Read `.claude/skills/prime-project/project-configs/{project-name}.json` for test commands
+1. Read `$SKILLS_ROOT/prime-project/session-state.md` for the current project name, JIRA ID, and phase
+2. Read `$SKILLS_ROOT/prime-project/project-configs/{project-name}.json` for test commands
 3. If no session state exists:
    - Infer project from the current directory (e.g., if `pwd` contains `apps/payroll-backend`, it's `payroll-backend`)
    - If ambiguous, ask the user which project to test

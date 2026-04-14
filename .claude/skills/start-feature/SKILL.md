@@ -23,7 +23,7 @@ If `get-ticket` flags gaps in the requirements, present the assessment and let t
 
 ### 2. Resolve the Project
 
-Determine which local project this ticket belongs to. Scan all config files in `.claude/skills/prime-project/project-configs/` and check each config's `jiraPrefixes` array for the ticket's prefix.
+Determine which local project this ticket belongs to. Scan all config files in `$SKILLS_ROOT/prime-project/project-configs/` and check each config's `jiraPrefixes` array for the ticket's prefix.
 
 **Priority order:**
 
@@ -89,7 +89,7 @@ Use the project references that prime-project loaded (these vary per project —
 
 ### 7. Update Session State
 
-Update `.claude/skills/prime-project/session-state.md`:
+Update `$SKILLS_ROOT/prime-project/session-state.md`:
 
 ```markdown
 # Session State
