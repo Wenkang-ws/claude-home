@@ -51,6 +51,10 @@ interface BoardConfig {
   name: string;
   ticketPrefix: string;
   ticketSystem: string;
+  /** Optional comment to post on a PR to trigger an external AI review bot.
+   *  When set, the poller posts this comment instead of having Claude review the diff itself.
+   *  If absent, AI review is skipped entirely for this board. */
+  'code-review-comment'?: string;
   states: {
     backlog: string;
     todo: string;
@@ -795,28 +799,53 @@ If Slack MCP is not available, print the composed message so it can be copied ma
 function spawnAIReview(issue: Issue, board: BoardConfig, prUrl: string): void {
   const prNumber = prUrl.match(/\/pull\/(\d+)/)?.[1];
   if (!prNumber) return;
+  const codeReviewComment = board['code-review-comment'];
+  if (!codeReviewComment) return; // no review configured for this board — skip
   const repoConfig = resolveRepo(issue, board);
   const repoPath = repoConfig.path.replace(/^~/, process.env['HOME'] ?? '~');
 
-  const prompt = `You are a senior code reviewer. Review this PR carefully and post a GitHub review.
+  // Write the review-trigger comment to a temp file to avoid any shell escaping issues.
+  const tmpCommentFile = `/tmp/symphony-review-comment-${prNumber}.txt`;
+  const prompt = `You are monitoring an automated code review request for a GitHub PR.
 
-## PR to review
-${prUrl}
+## PR
+${prUrl} (PR #${prNumber})
 
 ## Instructions
 
-1. Run \`gh pr diff ${prNumber}\` to read the full diff.
-2. Run \`gh pr view ${prNumber} --json title,body\` to read the PR description.
-3. Read the Linear ticket linked in the PR body to understand the requirements.
-4. Review the diff for: correctness, security, performance, maintainability, missing tests, AC coverage.
-5. Post a review using \`gh pr review ${prNumber} --comment --body "..."\`. If specific issues found, also post inline comments.
-6. Keep the review concise and actionable. Don't nitpick style.
+1. Write the review-trigger comment to a temp file (avoids escaping issues):
+   \`\`\`bash
+   cat > ${tmpCommentFile} << 'SYMPHONY_EOF'
+${codeReviewComment}
+SYMPHONY_EOF
+   \`\`\`
 
-Write the review in English. Be direct and specific.
+2. Capture the current review count before posting, so you can identify only new reviews later:
+   \`\`\`bash
+   BEFORE_COUNT=$(gh pr view ${prNumber} --json reviews --jq '.reviews | length')
+   \`\`\`
 
-After posting the review, print exactly one of these lines as your LAST line:
-- \`ACTIONABLE:YES\` — if you posted comments requesting code changes
-- \`ACTIONABLE:NO\` — if the code looks good`;
+3. Post the comment to trigger the board's configured AI reviewer:
+   \`\`\`bash
+   gh pr comment ${prNumber} --body-file ${tmpCommentFile}
+   \`\`\`
+
+4. Poll the PR reviews every 30 seconds, for up to 15 minutes, until the review bot responds.
+   Only inspect reviews that were added after the trigger (index >= BEFORE_COUNT):
+   \`\`\`bash
+   gh pr view ${prNumber} --json reviews --jq ".reviews[$BEFORE_COUNT:] | map({login: .author.login, state: .state})"
+   \`\`\`
+   Repeat until you see a review with state APPROVED or CHANGES_REQUESTED, or 15 minutes elapse.
+
+5. Based on the result:
+   - If any new review shows CHANGES_REQUESTED → print \`ACTIONABLE:YES\`
+   - If any new review shows APPROVED, or 15 minutes elapse with no new review → print \`ACTIONABLE:NO\`
+
+Do not make code changes, commits, or any other actions beyond the above steps.
+
+Print exactly one of these as your LAST line of output:
+- \`ACTIONABLE:YES\` — the bot requested changes
+- \`ACTIONABLE:NO\` — the bot approved or the wait timed out`;
 
   const child = child_process.spawn(
     'claude',
