@@ -185,6 +185,18 @@
       ]
     },
     {
+      "linearProjectId": "07d6f5ab-3ee8-4bd8-9ae6-e0156db7fb1a",
+      "name": "ws-components",
+      "primaryRepo": "workstream-mono",
+      "repos": [
+        {
+          "name": "workstream-mono",
+          "path": "~/Documents/workstream-mono/libs/ws-components",
+          "hint": "共享 UI 组件库，供所有 MFE 子应用使用"
+        }
+      ]
+    },
+    {
       "linearProjectId": "6af6ba08-4e61-4603-9a11-b69ac8e5cec7",
       "name": "Frontend KTLO",
       "primaryRepo": "workstream-mono",
