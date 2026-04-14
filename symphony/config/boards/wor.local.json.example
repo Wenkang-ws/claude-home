@@ -1,0 +1,19 @@
+{
+  "// comment": "Copy this file to wor.local.json (gitignored) to add local project customizations.",
+  "// merge rules": "projects[] and repos[] are upserted by linearProjectId / name. Scalars replace base values.",
+
+  "projects": [
+    {
+      "linearProjectId": "REPLACE-WITH-LINEAR-PROJECT-UUID",
+      "name": "ws-components",
+      "primaryRepo": "workstream-mono",
+      "repos": [
+        {
+          "name": "workstream-mono",
+          "path": "~/Documents/workstream-mono/libs/ws-components",
+          "hint": "Shared UI component library used across all MFE sub-apps"
+        }
+      ]
+    }
+  ]
+}

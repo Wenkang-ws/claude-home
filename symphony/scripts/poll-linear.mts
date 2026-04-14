@@ -111,10 +111,62 @@ const symphonyConfig: SymphonyConfig = JSON.parse(
   fs.readFileSync(path.join(CONFIG_DIR, 'symphony.json'), 'utf8')
 );
 
+/** Deep-merge a local board override onto a base board config.
+ *
+ * Merge rules:
+ * - Scalar fields: local wins (replaces base)
+ * - `repos[]`:    local entries replace base entries sharing the same `name`; new ones are appended
+ * - `projects[]`: local entries replace base entries sharing the same `linearProjectId`; new ones are appended
+ * - `states`:     shallow-merged (local keys win)
+ *
+ * Local override files (*.local.json) are gitignored so they never reach the remote repo.
+ */
+function mergeBoardOverride(base: BoardConfig, local: Partial<BoardConfig>): BoardConfig {
+  const merged = { ...base };
+
+  // Scalar overrides
+  for (const key of Object.keys(local) as (keyof BoardConfig)[]) {
+    if (key === 'repos' || key === 'projects' || key === 'states') continue;
+    // @ts-ignore dynamic key
+    merged[key] = local[key];
+  }
+
+  // states: shallow-merge
+  if (local.states) {
+    merged.states = { ...base.states, ...local.states };
+  }
+
+  // repos[]: upsert by name
+  if (local.repos?.length) {
+    const repoMap = new Map(base.repos.map((r) => [r.name, r]));
+    for (const r of local.repos) repoMap.set(r.name, r);
+    merged.repos = [...repoMap.values()];
+  }
+
+  // projects[]: upsert by linearProjectId
+  if (local.projects?.length) {
+    const projMap = new Map(base.projects.map((p) => [p.linearProjectId, p]));
+    for (const p of local.projects) projMap.set(p.linearProjectId, p);
+    merged.projects = [...projMap.values()];
+  }
+
+  return merged;
+}
+
+const boardsDir = path.join(CONFIG_DIR, 'boards');
 const boards: BoardConfig[] = fs
-  .readdirSync(path.join(CONFIG_DIR, 'boards'))
-  .filter((f) => f.endsWith('.json'))
-  .map((f) => JSON.parse(fs.readFileSync(path.join(CONFIG_DIR, 'boards', f), 'utf8')));
+  .readdirSync(boardsDir)
+  .filter((f) => f.endsWith('.json') && !f.endsWith('.local.json'))
+  .map((f) => {
+    const base: BoardConfig = JSON.parse(fs.readFileSync(path.join(boardsDir, f), 'utf8'));
+    const localFile = path.join(boardsDir, f.replace(/\.json$/, '.local.json'));
+    if (fs.existsSync(localFile)) {
+      const local: Partial<BoardConfig> = JSON.parse(fs.readFileSync(localFile, 'utf8'));
+      console.log(chalk.dim(`[config] Merging local override: ${path.basename(localFile)}`));
+      return mergeBoardOverride(base, local);
+    }
+    return base;
+  });
 
 // Build lookup: linearProjectId → { project, repo }
 interface ProjectResolvedConfig {
