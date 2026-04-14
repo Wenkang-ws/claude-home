@@ -107,9 +107,17 @@ if (!LINEAR_API_KEY) {
   process.exit(1);
 }
 
-const symphonyConfig: SymphonyConfig = JSON.parse(
+const symphonyConfigBase: SymphonyConfig = JSON.parse(
   fs.readFileSync(path.join(CONFIG_DIR, 'symphony.json'), 'utf8')
 );
+const symphonyLocalFile = path.join(CONFIG_DIR, 'symphony.local.json');
+const symphonyConfig: SymphonyConfig = fs.existsSync(symphonyLocalFile)
+  ? (() => {
+      const local: Partial<SymphonyConfig> = JSON.parse(fs.readFileSync(symphonyLocalFile, 'utf8'));
+      console.log(chalk.dim('[config] Merging local override: symphony.local.json'));
+      return { ...symphonyConfigBase, ...local };
+    })()
+  : symphonyConfigBase;
 
 /** Deep-merge a local board override onto a base board config.
  *

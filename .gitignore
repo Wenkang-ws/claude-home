@@ -11,5 +11,6 @@
 # symphony automation — symphony/.gitignore handles runtime exclusions
 !symphony/
 !symphony/**
-# Local board overrides are machine-specific and must not be committed
+# Local overrides are machine-specific and must not be committed
 symphony/config/boards/*.local.json
+symphony/config/symphony.local.json

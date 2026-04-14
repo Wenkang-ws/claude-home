@@ -1,10 +1,11 @@
 {
-  "// comment": "Copy this file to wor.local.json (gitignored) to add local project customizations.",
-  "// merge rules": "projects[] and repos[] are upserted by linearProjectId / name. Scalars replace base values.",
+  "// usage": "Copy this file to wor.local.json (gitignored). Add project entries for Linear projects not yet in wor.json.",
+  "// merge rules": "projects[] upserted by linearProjectId, repos[] upserted by name. Scalar fields replace base values.",
+  "// tip": "Run the sync-projects skill to auto-generate entries from your Linear projects.",
 
   "projects": [
     {
-      "linearProjectId": "REPLACE-WITH-LINEAR-PROJECT-UUID",
+      "linearProjectId": "07d6f5ab-3ee8-4bd8-9ae6-e0156db7fb1a",
       "name": "ws-components",
       "primaryRepo": "workstream-mono",
       "repos": [

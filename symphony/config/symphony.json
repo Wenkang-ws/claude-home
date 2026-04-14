@@ -1,11 +1,11 @@
 {
-  "assigneeId": "fa0cae9a-9b6a-4ad0-b2ca-e14452acc2db",
-  "maxConcurrent": 5,
-  "pollIntervalSeconds": 30,
-  "remoteControl": true,
+  "assigneeId": "YOUR_LINEAR_USER_UUID",
+  "maxConcurrent": 3,
+  "pollIntervalSeconds": 60,
+  "remoteControl": false,
   "preferences": {
-    "personalLanguage": "Chinese (Simplified)",
+    "personalLanguage": "English",
     "workLanguage": "English",
-    "neverUseLanguage": "Korean or Japanese"
+    "neverUseLanguage": ""
   }
 }
