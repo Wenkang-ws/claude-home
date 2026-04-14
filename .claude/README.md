@@ -35,13 +35,13 @@ git clone git@github.com:YOUR_USERNAME/claude-home.git ~/.claude
 ### 2. Install Symphony dependencies
 
 ```bash
-cd ~/.claude/symphony && npm install
+cd ~/symphony && npm install
 ```
 
 ### 3. Add secrets
 
 ```bash
-cp ~/.claude/symphony/secrets.env.example ~/.claude/symphony/secrets.env
+cp ~/symphony/secrets.env.example ~/symphony/secrets.env
 # Edit secrets.env and fill in LINEAR_API_KEY
 ```
 

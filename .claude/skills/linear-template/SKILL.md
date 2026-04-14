@@ -14,7 +14,7 @@ Syncs the issue templates defined in `$SYMPHONY_ROOT/config/linear-templates.jso
 ## Step 1 — Read the template definitions
 
 ```bash
-TEMPLATES_FILE="$HOME/.claude/symphony/config/linear-templates.json"
+TEMPLATES_FILE="$HOME/symphony/config/linear-templates.json"
 cat "$TEMPLATES_FILE"
 ```
 
@@ -29,7 +29,7 @@ For each template in the JSON, call `templateUpdate` if it has an `id`, or `temp
 ### Update an existing template
 
 ```bash
-LINEAR_API_KEY="$(grep LINEAR_API_KEY ~/.claude/symphony/secrets.env | cut -d= -f2)"
+LINEAR_API_KEY="$(grep LINEAR_API_KEY ~/symphony/secrets.env | cut -d= -f2)"
 
 TEMPLATE_ID="<id from JSON>"
 TEMPLATE_NAME="<name>"
@@ -39,7 +39,7 @@ TEMPLATE_DATA='<templateData JSON string>'   # the full templateData object, JSO
 python3 - <<PYEOF
 import json, urllib.request
 
-api_key = "$(grep LINEAR_API_KEY ~/.claude/symphony/secrets.env | cut -d= -f2 | tr -d '\n')"
+api_key = "$(grep LINEAR_API_KEY ~/symphony/secrets.env | cut -d= -f2 | tr -d '\n')"
 template_id = "$TEMPLATE_ID"
 template_name = "$TEMPLATE_NAME"
 template_desc = "$TEMPLATE_DESC"
@@ -47,7 +47,7 @@ template_desc = "$TEMPLATE_DESC"
 # Build the templateData ProseMirror doc from markdown
 # Read templateData from the JSON config for this template
 import subprocess, os
-config = json.loads(open(os.path.expanduser("~/.claude/symphony/config/linear-templates.json")).read())
+config = json.loads(open(os.path.expanduser("~/symphony/config/linear-templates.json")).read())
 tpl = next(t for t in config["templates"] if t["id"] == template_id)
 template_data = json.dumps(tpl["templateData"])
 
@@ -80,8 +80,8 @@ PYEOF
 python3 - <<PYEOF
 import json, urllib.request, os
 
-api_key = "$(grep LINEAR_API_KEY ~/.claude/symphony/secrets.env | cut -d= -f2 | tr -d '\n')"
-config = json.loads(open(os.path.expanduser("~/.claude/symphony/config/linear-templates.json")).read())
+api_key = "$(grep LINEAR_API_KEY ~/symphony/secrets.env | cut -d= -f2 | tr -d '\n')"
+config = json.loads(open(os.path.expanduser("~/symphony/config/linear-templates.json")).read())
 team_id = config["teamId"]
 
 # Find templates without an id
@@ -133,7 +133,7 @@ Or verify via API:
 python3 - <<'PYEOF'
 import json, urllib.request, os
 
-api_key = open(os.path.expanduser("~/.claude/symphony/secrets.env")).read()
+api_key = open(os.path.expanduser("~/symphony/secrets.env")).read()
 api_key = next(l.split("=",1)[1].strip() for l in api_key.splitlines() if l.startswith("LINEAR_API_KEY"))
 
 query = '{ templates { id name description type } }'
@@ -154,7 +154,7 @@ PYEOF
 
 ## Template format reference
 
-Templates are stored in `~/.claude/symphony/config/linear-templates.json`. The `descriptionMarkdown` field uses standard Markdown. Required sections per type:
+Templates are stored in `~/symphony/config/linear-templates.json`. The `descriptionMarkdown` field uses standard Markdown. Required sections per type:
 
 | Section | Feature | Bug | Chore |
 |---------|---------|-----|-------|
