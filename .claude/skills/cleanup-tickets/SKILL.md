@@ -81,11 +81,18 @@ Skip tickets already in **Done** state — they just need worktree cleanup (Step
 ### 3b — Check GitHub PR state
 
 ```bash
+# Check for any open PR first — if one exists, the ticket is still active
+gh pr list --repo "$GITHUB_REPO" --head "$BRANCH" --state open --json number --limit 1
+
 # Check for a merged PR with this branch head
 gh pr list --repo "$GITHUB_REPO" --head "$BRANCH" --state merged --json number,mergedAt --limit 1
 ```
 
-If the result array is non-empty, the PR is merged.
+**A ticket is safe to finalize only if:**
+- There are **no open PRs** for the branch, AND
+- At least one **merged PR** exists for the branch
+
+If an open PR exists, skip this ticket — it is still in active review.
 
 ---
 
