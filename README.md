@@ -17,7 +17,7 @@ This repo lives at `~` (your home directory). The `.gitignore` whitelists only w
     skills/          — Shared skills usable by both interactive and Symphony sessions
     memory/          — Persistent memory across Claude sessions (auto-managed, gitignored)
   symphony/
-    config/          — Your personal board configs (boards/*.json, symphony.local.json)
+    config/          — Your personal board configs (boards/*.json, symphony.json) — gitignored
     config-example/  — Template configs to copy from when setting up a new board
     scripts/         — Poller, runner, and PTY wrapper
     secrets.env      — LINEAR_API_KEY (gitignored)
@@ -95,4 +95,4 @@ The root `.gitignore` ignores everything (`*`) and then whitelists only:
 - `symphony/` — scripts and config-example (secrets and logs inside are excluded by `symphony/.gitignore`)
 - `README.md` — this file
 
-Machine-specific settings (`settings.json`, `symphony.local.json`, `*.local.json`) and secrets are always excluded.
+Machine-specific settings (`settings.json`, `symphony/config/`) and secrets are always excluded.

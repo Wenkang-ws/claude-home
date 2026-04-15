@@ -18,7 +18,7 @@ When committing to the claude-home repo (detected when the git remote contains `
 
 - **Only stage whitelisted paths** — the home directory contains non-repo files that must never be staged
 - Use `git add .claude/ symphony/ README.md` instead of `git add -u`
-- Do **not** stage `symphony/config/symphony.json`, `symphony/config/boards/*.local.json`, `symphony/secrets.env`, or any runtime data
+- Do **not** stage `symphony/config/`, `symphony/secrets.env`, or any runtime data — these are gitignored
 
 ## Pre-commit checks
 

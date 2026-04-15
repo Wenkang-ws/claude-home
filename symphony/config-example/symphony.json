@@ -1,5 +1,5 @@
 {
-  "_comment": "Copy this file to config/symphony.json and fill in your values. Override per-machine with config/symphony.local.json (gitignored).",
+  "_comment": "Copy this file to config/symphony.json and fill in your values.",
   "assigneeId": "YOUR_LINEAR_USER_UUID",
   "maxConcurrent": 3,
   "pollIntervalSeconds": 60,

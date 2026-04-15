@@ -165,8 +165,8 @@ if (ASSIGNEE_ID === 'YOUR_LINEAR_USER_UUID') {
   console.error(chalk.red('\n[symphony] ✗ assigneeId 未配置'));
   console.error(chalk.yellow('  symphony.json 里的 assigneeId 还是占位符，需要填入你的 Linear 用户 UUID。'));
   console.error(chalk.cyan('\n  修复方法：'));
-  console.error(chalk.cyan(`  1. 新建文件 ${path.join(CONFIG_DIR, 'symphony.local.json')}`));
-  console.error(chalk.cyan('  2. 写入：{ "assigneeId": "<你的 Linear UUID>" }'));
+  console.error(chalk.cyan(`  1. 编辑 ${path.join(CONFIG_DIR, 'symphony.json')}`));
+  console.error(chalk.cyan('  2. 将 assigneeId 替换为你的 Linear 用户 UUID'));
   console.error(chalk.cyan('  3. 如不知道 UUID，可在 Linear → Settings → Account 查看，'));
   console.error(chalk.cyan('     或运行：'));
   console.error(chalk.white(`     curl -s -X POST https://api.linear.app/graphql \\`));
@@ -1136,7 +1136,7 @@ async function poll(): Promise<void> {
       if (msg.includes('Argument Validation Error')) {
         log(chalk.red(`[${timestamp()}] Linear API 参数错误 (${board.name})`));
         log(chalk.yellow(`  可能原因：assigneeId 或 state ID 格式不合法。`));
-        log(chalk.cyan(`  检查 ${path.join(CONFIG_DIR, 'symphony.local.json')} 里的 assigneeId 是否为有效 UUID。`));
+        log(chalk.cyan(`  检查 ${path.join(CONFIG_DIR, 'symphony.json')} 里的 assigneeId 是否为有效 UUID。`));
       } else {
         log(chalk.red(`[${timestamp()}] Linear API error (${board.name}): ${err}`));
       }
