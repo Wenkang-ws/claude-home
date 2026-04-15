@@ -33,6 +33,9 @@ interface RepoConfig {
   defaultBranch: string;
   github: string;
   isMono: boolean;
+  /** Per-repo AI review trigger comment. Overrides board-level code-review-comment.
+   *  Set to empty string "" to disable review for this repo specifically. */
+  'code-review-comment'?: string;
   setup: {
     symlinkNodeModules: boolean;
     installCommand: string;
@@ -107,8 +110,10 @@ if (!LINEAR_API_KEY) {
   process.exit(1);
 }
 
+const symphonyJsonPath = path.join(CONFIG_DIR, 'symphony.json');
+const symphonyExamplePath = path.join(SYMPHONY_ROOT, 'config-example', 'symphony.json');
 const symphonyConfigBase: SymphonyConfig = JSON.parse(
-  fs.readFileSync(path.join(CONFIG_DIR, 'symphony.json'), 'utf8')
+  fs.readFileSync(fs.existsSync(symphonyJsonPath) ? symphonyJsonPath : symphonyExamplePath, 'utf8')
 );
 const symphonyLocalFile = path.join(CONFIG_DIR, 'symphony.local.json');
 const symphonyConfig: SymphonyConfig = fs.existsSync(symphonyLocalFile)
@@ -200,6 +205,21 @@ const MAX_CONCURRENT = symphonyConfig.maxConcurrent;
 const POLL_INTERVAL_MS = symphonyConfig.pollIntervalSeconds * 1000;
 const REMOTE_CONTROL = symphonyConfig.remoteControl;
 const ASSIGNEE_ID = symphonyConfig.assigneeId;
+
+if (ASSIGNEE_ID === 'YOUR_LINEAR_USER_UUID') {
+  console.error(chalk.red('\n[symphony] ✗ assigneeId 未配置'));
+  console.error(chalk.yellow('  symphony.json 里的 assigneeId 还是占位符，需要填入你的 Linear 用户 UUID。'));
+  console.error(chalk.cyan('\n  修复方法：'));
+  console.error(chalk.cyan(`  1. 新建文件 ${path.join(CONFIG_DIR, 'symphony.local.json')}`));
+  console.error(chalk.cyan('  2. 写入：{ "assigneeId": "<你的 Linear UUID>" }'));
+  console.error(chalk.cyan('  3. 如不知道 UUID，可在 Linear → Settings → Account 查看，'));
+  console.error(chalk.cyan('     或运行：'));
+  console.error(chalk.white(`     curl -s -X POST https://api.linear.app/graphql \\`));
+  console.error(chalk.white(`       -H "Authorization: $LINEAR_API_KEY" \\`));
+  console.error(chalk.white(`       -H "Content-Type: application/json" \\`));
+  console.error(chalk.white(`       -d '{"query":"{ viewer { id name } }"}'\n`));
+  process.exit(1);
+}
 
 // ── Linear API ────────────────────────────────────────────────────────────────
 
@@ -997,9 +1017,12 @@ If Slack MCP is not available, print the composed message so it can be copied ma
 function spawnAIReview(issue: Issue, board: BoardConfig, prUrl: string): void {
   const prNumber = prUrl.match(/\/pull\/(\d+)/)?.[1];
   if (!prNumber) return;
-  const codeReviewComment = board['code-review-comment'];
-  if (!codeReviewComment) return; // no review configured for this board — skip
   const repoConfig = resolveRepo(issue, board);
+  // Repo-level override takes precedence; fall back to board-level default
+  const codeReviewComment = 'code-review-comment' in repoConfig
+    ? repoConfig['code-review-comment']
+    : board['code-review-comment'];
+  if (!codeReviewComment) return; // no review configured for this repo/board — skip
   const repoPath = repoConfig.path.replace(/^~/, process.env['HOME'] ?? '~');
 
   // Write the review-trigger comment to a temp file to avoid any shell escaping issues.
@@ -1154,7 +1177,14 @@ async function poll(): Promise<void> {
         fetchTicketsByState(board.teamId, board.states.rework),
       ]);
     } catch (err) {
-      log(chalk.red(`[${timestamp()}] Linear API error (${board.name}): ${err}`));
+      const msg = String(err);
+      if (msg.includes('Argument Validation Error')) {
+        log(chalk.red(`[${timestamp()}] Linear API 参数错误 (${board.name})`));
+        log(chalk.yellow(`  可能原因：assigneeId 或 state ID 格式不合法。`));
+        log(chalk.cyan(`  检查 ${path.join(CONFIG_DIR, 'symphony.local.json')} 里的 assigneeId 是否为有效 UUID。`));
+      } else {
+        log(chalk.red(`[${timestamp()}] Linear API error (${board.name}): ${err}`));
+      }
       continue;
     }
 

@@ -21,7 +21,7 @@
 > - **$WORK_PREFERRED_LANGUAGE**：一切进入仓库或工单系统的内容 — 代码注释、commit 消息、PR 标题/正文、工单评论、workpad 条目。
 > - 任何情况下都不得使用 $NEVER_USE_LANGUAGE。
 
-> **工单系统：** `$TICKET_SYSTEM`。若为 linear → 所有 API 操作使用 `$SKILLS_ROOT/linear/SKILL.md`（curl + `$LINEAR_API_KEY`）。**不得使用 Linear MCP server** — 它需要 OAuth，自治模式下不可用。若为 jira → 使用 Jira MCP 工具。**绝不混用工单系统。** **如果获取工单失败，立即停止并报告错误 — 不得根据标题或代码库猜测需求。**
+> **工单系统：** 所有工单操作使用 `$SKILLS_ROOT/linear/SKILL.md`（curl + `$LINEAR_API_KEY`）。**不得使用 Linear MCP server** — 它需要 OAuth，自治模式下不可用。**如果获取工单失败，立即停止并报告错误 — 不得根据标题或代码库猜测需求。**
 
 > **自治模式：** 永远不要让人类跟进。使用 `$SKILLS_ROOT/commit/SKILL.md` 和 `$SKILLS_ROOT/create-pr/SKILL.md`。
 

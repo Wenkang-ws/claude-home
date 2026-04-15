@@ -3,7 +3,7 @@
   "name": "Workstream",
   "ticketPrefix": "WOR",
   "ticketSystem": "linear",
-  "code-review-comment": "@Workstream GitHub actions, review",
+  "code-review-comment": "@workstream-github-actions review",
   "states": {
     "backlog":     "22878739-c56b-41be-b3ba-c2509828b90a",
     "todo":        "31f994fc-9906-4c76-bb93-a7725863b950",
@@ -99,18 +99,33 @@
         "installCommand": "",
         "installCheck": ""
       }
+    },
+    {
+      "name": "claude-home",
+      "description": "Claude Code 个人配置仓库 — 全局指令、Symphony 自治 agent 系统和共享 skills。仓库根目录即 ~（home 目录）。修改 CLAUDE.md、WORKFLOW.md、skills/ 或 symphony/ 时在此仓库操作。",
+      "path": "~",
+      "worktreesDir": "~/worktrees/claude-home",
+      "defaultBranch": "main",
+      "github": "Stupidism/claude-home",
+      "isMono": false,
+      "code-review-comment": "",
+      "setup": {
+        "symlinkNodeModules": false,
+        "installCommand": "cd ~/symphony && npm install",
+        "installCheck": "symphony/package.json"
+      }
     }
   ],
   "projects": [
     {
       "linearProjectId": "5bd2d7bf-8967-4dfd-85ba-2217b8481b5e",
       "name": "Symphony",
-      "primaryRepo": "workstream-mono",
+      "primaryRepo": "claude-home",
       "repos": [
         {
-          "name": "workstream-mono",
-          "path": "~/Documents/workstream-mono/symphony",
-          "hint": "Symphony 自治 agent 系统的脚本和配置，所有 WOR 自动化工作流相关改动都在这里"
+          "name": "claude-home",
+          "path": "~",
+          "hint": "Claude Code 配置和 Symphony 自治 agent 系统 — 所有 claude-home 相关改动（skills、WORKFLOW.md、symphony/ 脚本和配置）都在这里"
         }
       ]
     },

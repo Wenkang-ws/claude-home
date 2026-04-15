@@ -1,22 +1,27 @@
 ---
 name: sync-projects
-description: Fetch all Linear projects for a board, match each to a code repo or monorepo sub-path, and generate a wor.local.json projects[] snippet the user can paste in. Run whenever new Linear projects have been created and wor.json does not yet include them.
+description: Fetch all Linear projects for a board, match each to a code repo or monorepo sub-path, and merge new entries into the board config. Run whenever new Linear projects have been created and the board config does not yet include them.
 ---
 
-# Sync Linear Projects → wor.local.json
+# Sync Linear Projects → board config
 
 ## When to run
 
 Use this skill after a new Linear project is created and you need to add it to
-`$SYMPHONY_ROOT/config/boards/wor.local.json` without editing the committed `wor.json`.
+`$SYMPHONY_ROOT/config/boards/<board>.json`.
 
 ---
 
-## Step 1 — Fetch all Linear projects for the board
+## Step 1 — Identify the board file and fetch all Linear projects
 
 ```bash
 LINEAR_API_KEY="${LINEAR_API_KEY:-$(grep LINEAR_API_KEY $SYMPHONY_ROOT/secrets.env | cut -d= -f2)}"
-BOARD_FILE="${SYMPHONY_ROOT}/config/boards/wor.json"
+
+# List available board configs and pick the right one
+ls $SYMPHONY_ROOT/config/boards/*.json | grep -v example
+
+# Set BOARD_FILE to the relevant board config, e.g.:
+# BOARD_FILE="${SYMPHONY_ROOT}/config/boards/<board>.json"
 TEAM_ID=$(node -e "process.stdout.write(JSON.parse(require('fs').readFileSync('$BOARD_FILE','utf8')).teamId)")
 
 curl -s -X POST https://api.linear.app/graphql \
@@ -33,14 +38,12 @@ This prints every project's UUID and name.
 
 ---
 
-## Step 2 — Find projects not yet in wor.json or wor.local.json
+## Step 2 — Find projects not yet in the board config
 
 ```bash
-# Collect IDs already in the committed config
 EXISTING_IDS=$(node -e "
   const base = JSON.parse(require('fs').readFileSync('$BOARD_FILE','utf8'));
-  const local = (() => { try { return JSON.parse(require('fs').readFileSync('$BOARD_FILE'.replace('.json','.local.json'),'utf8')); } catch(e) { return {projects:[]}; } })();
-  const all = [...(base.projects||[]), ...(local.projects||[])].map(p => p.linearProjectId);
+  const all = (base.projects||[]).map(p => p.linearProjectId);
   process.stdout.write(all.join('\n'));
 ")
 echo "Already mapped project IDs:"
@@ -82,7 +85,7 @@ Apply these rules in order for each unmapped Linear project:
 3. **No match** — mark as `UNMATCHED`; the user must supply the path manually.
 
 For each match, determine:
-- Whether the path is under `apps/` (typically `primaryRepo: "workstream-mono"`) or a separate repo
+- Whether the path is under `apps/` (typically `primaryRepo` is the monorepo name) or a separate repo
 - A one-sentence `hint` describing the sub-app's purpose (read the directory's `README.md` or `project.json` if available)
 
 ---
@@ -102,54 +105,57 @@ Use the `name` and `tags` fields to compose a `hint` sentence.
 
 ---
 
-## Step 6 — Generate wor.local.json snippet
+## Step 6 — Generate new project entries
 
-Print a JSON fragment for each newly matched project:
+Determine the current repo name:
+
+```bash
+# $GITHUB_REPO is injected by Symphony (e.g. "acme/my-repo")
+REPO_NAME="${GITHUB_REPO##*/}"
+# If not in a Symphony session, fall back to reading the name from board config repos[] (Step 3)
+```
+
+For a monorepo match, `primaryRepo` is the monorepo's `name` field from the board config; for a standalone-repo match, use that repo's `name`. Use `$REPO_NAME` directly — do not hardcode it.
 
 ```jsonc
+// New entries to add to the "projects" array in $BOARD_FILE:
 {
-  "projects": [
-    // For each matched project:
+  "linearProjectId": "<uuid-from-step-1>",
+  "name": "<Linear project name>",
+  "primaryRepo": "$REPO_NAME",
+  "repos": [
     {
-      "linearProjectId": "<uuid-from-step-1>",
-      "name": "<Linear project name>",
-      "primaryRepo": "workstream-mono",
-      "repos": [
-        {
-          "name": "workstream-mono",
-          "path": "~/Documents/workstream-mono/<apps-or-libs>/<dir-name>",
-          "hint": "<one-sentence description of what this sub-app does>"
-        }
-      ]
+      "name": "$REPO_NAME",
+      "path": "<repo-path-from-board-config>/<apps-or-libs>/<dir-name>",
+      "hint": "<one-sentence description of what this sub-app does>"
     }
-    // UNMATCHED projects appear as comments — user fills in the path manually
   ]
 }
+// UNMATCHED projects appear as comments — user fills in manually
 ```
 
 ---
 
-## Step 7 — Merge into wor.local.json
+## Step 7 — Merge into board config
 
-If `$SYMPHONY_ROOT/config/boards/wor.local.json` already exists, deep-merge the new entries
-(add only projects whose `linearProjectId` is not already present):
+Add each new entry to the `projects` array in `$BOARD_FILE` (only projects whose `linearProjectId` is not already present):
 
 ```bash
-LOCAL_FILE="$SYMPHONY_ROOT/config/boards/wor.local.json"
-
-if [ -f "$LOCAL_FILE" ]; then
-  echo "Existing wor.local.json found — append only new project entries."
-  echo "Review the generated snippet above, then manually add missing entries."
-else
-  echo "No wor.local.json yet. Copy wor.local.json.example and paste the snippet above into projects[]."
-  echo "Template: $SYMPHONY_ROOT/config/boards/wor.local.json.example"
-fi
+node -e "
+  const fs = require('fs');
+  const config = JSON.parse(fs.readFileSync('$BOARD_FILE', 'utf8'));
+  const existing = new Set((config.projects||[]).map(p => p.linearProjectId));
+  const newEntries = [/* paste generated entries here */];
+  const toAdd = newEntries.filter(p => !existing.has(p.linearProjectId));
+  config.projects = [...(config.projects||[]), ...toAdd];
+  fs.writeFileSync('$BOARD_FILE', JSON.stringify(config, null, 2) + '\n');
+  console.log('Added', toAdd.length, 'project(s):', toAdd.map(p => p.name).join(', '));
+"
 ```
 
 ---
 
 ## Notes
 
-- `wor.local.json` is gitignored — it is safe to include machine-specific paths or personal API tokens.
-- The poller (`poll-linear.mts`) merges `wor.local.json` onto `wor.json` at startup automatically.
-- When a project is added to the upstream `wor.json`, you can delete the corresponding entry from your local file to avoid duplication (duplicate entries are harmless but cluttering).
+- The poller (`poll-linear.mts`) reads the board config at startup — restart it after editing.
+- When a project is renamed in Linear, update the `name` field here to match.

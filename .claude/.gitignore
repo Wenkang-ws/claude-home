@@ -33,3 +33,6 @@ image-cache/
 RTK.md
 hooks/
 memory/
+
+# README lives at project root (~), not here
+README.md
