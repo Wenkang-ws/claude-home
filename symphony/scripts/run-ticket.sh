@@ -42,7 +42,7 @@ REPO_ROOT="${REPO_ROOT/#\~/$HOME}"  # expand ~
 WORKTREES_DIR="${WORKTREES_DIR:?WORKTREES_DIR env var required}"
 WORKTREES_DIR="${WORKTREES_DIR/#\~/$HOME}"
 DEFAULT_BRANCH="${DEFAULT_BRANCH:-master}"
-WORKFLOW_FILE="${HOME}/.claude/WORKFLOW.md"
+WORKFLOW_FILE="${HOME}/WORKFLOW.md"
 
 SLUG="$(echo "$TICKET_TITLE" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | cut -c1-40 | sed 's/-$//')"
 BRANCH="feat/${TICKET_ID}-${SLUG}"
