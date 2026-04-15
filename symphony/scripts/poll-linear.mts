@@ -441,19 +441,26 @@ function branchForIssue(issue: Issue): string {
 }
 
 /**
- * Check whether the PR for a ticket has already been merged on GitHub.
- * Returns true if at least one merged PR is found for the branch.
+ * Check whether the PR for a ticket has already been merged on GitHub,
+ * with no remaining open PRs on the same branch.
+ * Returns true only when it is safe to finalize: merged exists AND no open PR.
  */
 function isPRMerged(issue: Issue, board: BoardConfig): boolean {
   const repo = resolveRepo(issue, board);
   const repoPath = repo.path.replace(/^~/, process.env['HOME'] ?? '~');
   const branch = branchForIssue(issue);
-  const result = child_process.spawnSync(
-    'gh', ['pr', 'list', '--head', branch, '--state', 'merged', '--json', 'number', '--limit', '1'],
-    { encoding: 'utf8', cwd: repoPath }
+  const ghOpts = { encoding: 'utf8' as const, cwd: repoPath };
+  // If an open PR still exists, the ticket is not ready to finalize
+  const openResult = child_process.spawnSync(
+    'gh', ['pr', 'list', '--head', branch, '--state', 'open', '--json', 'number', '--limit', '1'], ghOpts
   );
-  if (result.status !== 0) return false;
-  try { return (JSON.parse(result.stdout) as unknown[]).length > 0; } catch { return false; }
+  try { if (openResult.status === 0 && (JSON.parse(openResult.stdout) as unknown[]).length > 0) return false; } catch { /* ignore */ }
+  // Check for at least one merged PR
+  const mergedResult = child_process.spawnSync(
+    'gh', ['pr', 'list', '--head', branch, '--state', 'merged', '--json', 'number', '--limit', '1'], ghOpts
+  );
+  if (mergedResult.status !== 0) return false;
+  try { return (JSON.parse(mergedResult.stdout) as unknown[]).length > 0; } catch { return false; }
 }
 
 /**
