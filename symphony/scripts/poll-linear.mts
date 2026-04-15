@@ -274,37 +274,31 @@ async function fetchTicketsByState(teamId: string, stateId: string): Promise<Iss
   return data.team.issues.nodes;
 }
 
-async function fetchTicketStateId(board: BoardConfig, identifier: string): Promise<string | null> {
-  const data = await linearQuery<{ team: { issues: { nodes: { state: { id: string } }[] } } }>(
-    `query GetTicketState($teamId: String!, $identifier: String!) {
-      team(id: $teamId) {
-        issues(filter: { identifier: { eq: $identifier } }, first: 1) {
-          nodes { state { id name } }
-        }
+async function fetchTicketStateId(_board: BoardConfig, identifier: string): Promise<string | null> {
+  const data = await linearQuery<{ issue: { state: { id: string; name: string } } | null }>(
+    `query GetTicketState($identifier: String!) {
+      issue(id: $identifier) {
+        state { id name }
       }
     }`,
-    { teamId: board.teamId, identifier }
+    { identifier }
   );
-  return data.team.issues.nodes[0]?.state?.id ?? null;
+  return data.issue?.state?.id ?? null;
 }
 
-async function fetchTicketByIdentifier(board: BoardConfig, identifier: string): Promise<Issue | null> {
-  const data = await linearQuery<{ team: { issues: { nodes: Issue[] } } }>(
-    `query GetTicketByIdentifier($teamId: String!, $identifier: String!) {
-      team(id: $teamId) {
-        issues(filter: { identifier: { eq: $identifier } }, first: 1) {
-          nodes {
-            id identifier title description url
-            state { id name }
-            assignee { id name }
-            project { id name }
-          }
-        }
+async function fetchTicketByIdentifier(_board: BoardConfig, identifier: string): Promise<Issue | null> {
+  const data = await linearQuery<{ issue: Issue | null }>(
+    `query GetTicketByIdentifier($identifier: String!) {
+      issue(id: $identifier) {
+        id identifier title description url
+        state { id name }
+        assignee { id name }
+        project { id name }
       }
     }`,
-    { teamId: board.teamId, identifier }
+    { identifier }
   );
-  return data.team.issues.nodes[0] ?? null;
+  return data.issue ?? null;
 }
 
 // ── Resolve ticket → repo ─────────────────────────────────────────────────────
