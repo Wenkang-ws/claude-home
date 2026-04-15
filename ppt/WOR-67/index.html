@@ -133,6 +133,16 @@
             <li>Results &amp; learnings</li>
           </ul>
         </div>
+        <div class="card yellow" style="grid-column: span 2; margin-top: 10px">
+          <span class="icon">🎭</span>
+          <h3>Live Demos — 4 Real Tickets</h3>
+          <div class="grid3" style="margin-top:8px;gap:10px">
+            <div><strong>WOR-55</strong> — UI design fixes from screenshots</div>
+            <div><strong>WOR-46</strong> — Dashboard data bug fix</div>
+            <div><strong>WOR-51</strong> — Symphony architecture refactor</div>
+          </div>
+          <p style="margin-top:8px;color:var(--warn)">+ WOR-67: This very presentation, built by Symphony</p>
+        </div>
       </div>
     </section>
 
@@ -873,6 +883,193 @@ claude \
       </div>
     </section>
 
+    <!-- ═══ DEMO DIVIDER ═══ -->
+    <section>
+      <h2 class="section-title">Live Demos</h2>
+      <h1 style="margin-top:10px">Real Tickets, Autonomous Work</h1>
+      <p class="dim" style="margin-top:20px">Selected from 60+ WOR- tickets processed by Symphony</p>
+      <div style="margin-top:28px;display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+        <div class="flow-box yellow" style="min-width:140px">🖌 WOR-55<br/><span class="dim">UI Design Fix</span></div>
+        <div class="flow-box" style="min-width:140px">🐛 WOR-46<br/><span class="dim">Data Bug Fix</span></div>
+        <div class="flow-box green" style="min-width:140px">🏗 WOR-51<br/><span class="dim">Architecture Refactor</span></div>
+        <div class="flow-box accent" style="min-width:140px;background:rgba(124,106,247,0.15);border-color:var(--primary)">🎭 WOR-67<br/><span class="dim">This PPT</span></div>
+      </div>
+    </section>
+
+    <!-- ═══ DEMO 1: WOR-55 ═══ -->
+    <section>
+      <h2>Demo 1 — WOR-55: UI Design Review Fixes <span class="tag yellow">~15 min</span></h2>
+      <div class="grid2">
+        <div>
+          <div class="card yellow" style="margin-bottom:12px">
+            <h3>Input: Screenshots from PM</h3>
+            <ul>
+              <li>图1: Three dropdowns width should match header</li>
+              <li>图2: Purple gap too wide, halve the padding</li>
+              <li>图3: Icon color #040, title #080</li>
+              <li>图4: Hide footer when no action buttons</li>
+            </ul>
+            <br/>
+            <p class="dim">No AC. No code references. Just images + Chinese captions.</p>
+          </div>
+          <div class="card green">
+            <h3>What the agent did</h3>
+            <ul class="check">
+              <li>Read the screenshot context</li>
+              <li>Located the relevant components</li>
+              <li>Applied 4 targeted CSS/prop changes</li>
+              <li>Submitted PR with before/after notes</li>
+            </ul>
+          </div>
+        </div>
+        <div>
+          <div class="card accent">
+            <h3>Key insight</h3>
+            <p>The ticket had <strong>no code references</strong> — just PM screenshots and brief Chinese captions. The agent had to:</p>
+            <ol style="margin-top:12px">
+              <li>Identify which component from the screenshots</li>
+              <li>Navigate the codebase independently</li>
+              <li>Translate visual feedback into code changes</li>
+            </ol>
+            <br/>
+            <p style="color:var(--accent)">This is the kind of ticket that normally requires back-and-forth between PM and developer. Symphony handled it in one shot.</p>
+          </div>
+          <div class="card" style="margin-top:12px;text-align:center">
+            <p class="dim" style="font-size:0.65em">WOR-55 · ODI Design review feedbacks</p>
+            <p style="color:var(--accent)">✓ Merged · 0 rework cycles</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ DEMO 2: WOR-46 ═══ -->
+    <section>
+      <h2>Demo 2 — WOR-46: Dashboard Data Bug <span class="tag green">~30 min</span></h2>
+      <div class="grid2">
+        <div>
+          <div class="card" style="border-color:#e06c75;background:rgba(224,108,117,0.07);margin-bottom:12px">
+            <h3 style="color:#e06c75">The Bug</h3>
+            <p>All dashboard event cards showed <strong>"9:00 AM – 5:00 PM"</strong> (hardcoded) regardless of actual working hours set in the system.</p>
+            <br/>
+            <div class="terminal" style="font-size:0.65em;padding:10px">
+              <span class="t-red">- &lt;span&gt;9:00 AM – 5:00 PM&lt;/span&gt;</span><br/>
+              <span class="t-green">+ &lt;span&gt;{formatTime(event.startTime)} – {formatTime(event.endTime)}&lt;/span&gt;</span>
+            </div>
+          </div>
+          <div class="card green">
+            <h3>What the agent did</h3>
+            <ul class="check">
+              <li>Read the linked backend PR for context</li>
+              <li>Ran <code>hr-api:ts-codegen:staging-4</code> to fetch updated types</li>
+              <li>Located the hardcoded string in the component</li>
+              <li>Replaced with dynamic data from the event API</li>
+            </ul>
+          </div>
+        </div>
+        <div>
+          <div class="card accent">
+            <h3>Cross-repo coordination</h3>
+            <p>This ticket required the agent to:</p>
+            <ol style="margin-top:12px">
+              <li>Read a <strong>backend PR</strong> on GitHub for context</li>
+              <li>Run a <strong>codegen script</strong> to get new TypeScript types</li>
+              <li>Update the <strong>frontend component</strong> to use real data</li>
+            </ol>
+            <br/>
+            <p style="color:var(--accent)">No human bridged backend → frontend. The agent connected the dots autonomously.</p>
+          </div>
+          <div class="card" style="margin-top:12px;text-align:center">
+            <p class="dim" style="font-size:0.65em">WOR-46 · Dashboard cards hardcoded time</p>
+            <p style="color:var(--accent)">✓ Merged · 0 rework cycles</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ DEMO 3: WOR-51 ═══ -->
+    <section>
+      <h2>Demo 3 — WOR-51: Architecture Refactor <span class="tag">Multi-hour</span></h2>
+      <div class="grid2">
+        <div>
+          <div class="card accent" style="margin-bottom:12px">
+            <h3>The Task</h3>
+            <p>Extract Symphony from <code>workstream-mono</code> (a business monorepo) into a standalone private repo <code>claude-home</code>.</p>
+            <br/>
+            <ul>
+              <li>Move all symphony files to <code>~/.claude/</code></li>
+              <li>Set up new repo: <code>github.com/Stupidism/claude-home</code></li>
+              <li>Update all cross-repo references</li>
+              <li>Ensure multi-repo support (one daemon, many repos)</li>
+              <li>Update CI/CD and secrets</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Why this matters</h3>
+            <p>Symphony was polluting business PRs with unrelated infrastructure changes. The refactor fully decoupled the automation framework from the product repos.</p>
+          </div>
+        </div>
+        <div>
+          <div class="card green">
+            <h3>What the agent did</h3>
+            <ul class="check">
+              <li>Read the full description and planned the migration</li>
+              <li>Created the new standalone repo structure</li>
+              <li>Migrated 15+ files across repo boundaries</li>
+              <li>Updated <code>wor.json</code> board config for multi-repo</li>
+              <li>Created PRs in both repos</li>
+              <li>Updated documentation</li>
+            </ul>
+          </div>
+          <div class="card yellow" style="margin-top:12px">
+            <h3>The meta-irony</h3>
+            <p>Symphony improved its own infrastructure autonomously. The agent that ran on this ticket was itself the thing being migrated. 🤯</p>
+          </div>
+          <div class="card" style="margin-top:12px;text-align:center">
+            <p class="dim" style="font-size:0.65em">WOR-51 · Extract symphony to claude-home</p>
+            <p style="color:var(--accent)">✓ Merged · 1 rework cycle</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ DEMO 4: WOR-67 (META) ═══ -->
+    <section>
+      <h2>Demo 4 — WOR-67: This Very Presentation <span class="tag green">Meta</span></h2>
+      <div class="grid2">
+        <div>
+          <div class="card accent">
+            <h3>The Ticket</h3>
+            <div class="terminal" style="font-size:0.62em;padding:12px;margin-top:10px">
+              <span class="t-yellow">Title:</span> <span class="t-white">Prepare a PPT about introducing</span><br/>
+              <span class="t-white">       symphony and my practice</span><br/><br/>
+              <span class="t-yellow">Part I:</span> <span class="t-white">Introduce Symphony</span><br/>
+              <span class="t-dim">         (github.com/openai/symphony)</span><br/><br/>
+              <span class="t-yellow">Part II:</span> <span class="t-white">My practice with claude-home</span><br/>
+              <span class="t-dim">          Learn from the code</span><br/><br/>
+              <span class="t-green">→</span> <span class="t-white">Deployed to Vercel</span><br/>
+              <span class="t-dim">  symphony-ppt.vercel.app</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card green" style="margin-bottom:12px">
+            <h3>What the agent did</h3>
+            <ul class="check">
+              <li>Read the Symphony spec on GitHub</li>
+              <li>Studied the previous PPT for style reference</li>
+              <li>Built a full Reveal.js presentation</li>
+              <li>Iterated on feedback (English, no OpenAI Agents SDK)</li>
+              <li>Added real demos from the ticket history</li>
+              <li>Deployed to Vercel autonomously</li>
+            </ul>
+          </div>
+          <div class="blockquote">
+            You are watching a presentation <strong>about Symphony</strong> that was <strong>built by Symphony</strong>. The slides you're reading were generated by a Claude Code agent running autonomously on a Linear ticket.
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ═══ CONCLUSION ═══ -->
     <section>
       <h2>Conclusion</h2>
@@ -896,6 +1093,7 @@ claude \
               <li>Ticket quality matters more than agent capability</li>
               <li>Skills = reusable prompt engineering</li>
               <li>~80% autonomous is already a massive win</li>
+              <li>Symphony can improve itself — WOR-51</li>
             </ul>
           </div>
         </div>
@@ -904,6 +1102,7 @@ claude \
         <p style="font-size:0.9em">
           The future of engineering is not replacing developers — it's <strong style="color:var(--accent)">elevating them from implementation to management</strong>. Symphony is the blueprint.
         </p>
+        <p class="dim" style="margin-top:12px;font-size:0.65em">This presentation was built autonomously by Symphony on ticket WOR-67.</p>
       </div>
     </section>
 
