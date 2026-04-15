@@ -180,10 +180,14 @@ fi
 # ── Spawn agent ────────────────────────────────────────────────────────────────
 
 if [ "${REMOTE_CONTROL:-}" = "true" ]; then
-  # Pre-trust the worktree directory: --print mode skips the interactive trust
-  # prompt and registers the path in ~/.claude/projects/, so the subsequent
-  # interactive (remote-control) session starts without a blocking trust dialog.
-  claude --dangerously-skip-permissions --print "." > /dev/null 2>&1 || true
+  # Pre-trust the worktree directory so Claude's interactive (remote-control)
+  # session doesn't block on the "Do you trust this folder?" prompt.
+  # Piping "1" answers the trust dialog, registering the path in Local Storage.
+  # Skip if already trusted (project dir exists) to avoid unnecessary overhead.
+  _project_key="$(echo "$WORKTREE_PATH" | sed 's|^/Users/[^/]*||' | tr '/' '-')"
+  if [ ! -d "${HOME}/.claude/projects/-Users-$(whoami)${_project_key}" ]; then
+    echo "1" | claude --dangerously-skip-permissions > /dev/null 2>&1 || true
+  fi
   PROMPT_FILE="$(mktemp /tmp/symphony-prompt-XXXXXX.txt)"
   printf '%s' "$PROMPT" > "$PROMPT_FILE"
   python3 "$SYMPHONY_ROOT/scripts/pty-wrapper.py" "$PROMPT_FILE" $SESSION_FLAG
