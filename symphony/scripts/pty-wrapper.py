@@ -12,7 +12,7 @@ Usage:
 The prompt file is read and deleted immediately after reading.
 """
 
-import pty, os, subprocess, sys, signal, threading, time
+import pty, os, subprocess, sys, signal
 
 prompt = open(sys.argv[1]).read()
 os.unlink(sys.argv[1])
@@ -69,18 +69,6 @@ def forward_signal(signum, frame):
 
 signal.signal(signal.SIGTERM, forward_signal)
 signal.signal(signal.SIGINT, forward_signal)
-
-# Auto-answer Claude Code's "Do you trust this folder?" prompt.
-# Every new worktree directory triggers this interactive confirmation in PTY mode.
-# The default selection is "Yes, I trust this folder" — pressing Enter confirms it.
-# All worktrees are spawned by Symphony from known repos, so auto-confirming is safe.
-def _auto_trust():
-    time.sleep(2)
-    try:
-        os.write(master_fd, b'\n')
-    except OSError:
-        pass
-threading.Thread(target=_auto_trust, daemon=True).start()
 
 # Discard PTY output (visible on claude.ai instead)
 # On macOS, os.read returns b'' (EOF) instead of raising OSError when the
