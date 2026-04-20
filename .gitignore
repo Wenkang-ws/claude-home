@@ -7,6 +7,10 @@
 !CLAUDE.md
 !WORKFLOW.md
 
+# GitHub Actions workflows
+!.github/
+!.github/**
+
 # .claude config directory — subdirectory .gitignore handles runtime exclusions
 !.claude/
 !.claude/**
