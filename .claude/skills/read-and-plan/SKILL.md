@@ -30,7 +30,7 @@ Evaluate whether the ticket provides enough information to start implementation.
 1. Check the **Requirements** and **Acceptance Criteria** sections for real, specific content (not template placeholders like `<specific, testable condition>`, `Requirement 1`, etc.).
 2. If those sections contain only placeholder text, try to **derive** the requirements and acceptance criteria from the **title** and **Context** section. A ticket with a clear title and a concrete Context paragraph can be actionable even without filled-in Requirements/AC sections.
 3. If — after considering the title and Context — the implementation goal is still ambiguous or untestable, **kick the ticket back to Backlog**:
-   a. Post a comment on the ticket (using the Linear API) that explains specifically what information is missing and what is needed to proceed.
+   a. Post a comment on the ticket (using the appropriate ticket system API) that explains specifically what information is missing and what is needed to proceed.
    b. Transition the ticket to `Backlog` state.
    c. **Stop. Do not proceed with the remaining steps.**
 
