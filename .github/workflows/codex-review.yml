@@ -1,0 +1,60 @@
+name: Trigger Codex Review
+
+on:
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "Pull request number to trigger @codex review on"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  trigger:
+    if: >-
+      (github.event_name == 'workflow_dispatch' &&
+       format('{0}', github.event.sender.id) == vars.CODEX_REVIEW_REQUESTER_ID) ||
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.pull_request != null &&
+       format('{0}', github.event.comment.user.id) == vars.CODEX_REVIEW_REQUESTER_ID &&
+       github.event.comment.body == 'SunStupic: @codex review')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post @codex review and clean up trigger/error comments
+        env:
+          GH_TOKEN: ${{ secrets.STUPIDISM_COMMENT_ONLY_TOKEN }}
+          PR_NUMBER: ${{ github.event.inputs.pr_number || github.event.issue.number }}
+          REPO: ${{ github.repository }}
+          REQUESTER_ID: ${{ vars.CODEX_REVIEW_REQUESTER_ID }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "STUPIDISM_COMMENT_ONLY_TOKEN secret is not configured" >&2
+            exit 1
+          fi
+
+          gh pr comment "$PR_NUMBER" --repo "$REPO" --body "@codex review"
+
+          # Clean up prior trigger/error comments on the PR once the real
+          # @codex review has been posted successfully:
+          #   - `SunStupic: @codex review` — this workflow's trigger phrase
+          #   - `@codex ...` from the requester — direct attempts that failed
+          #   - `To use Codex here...` from the codex connector bot — rejection replies
+          gh api "repos/$REPO/issues/$PR_NUMBER/comments" --paginate --jq "
+            .[]
+            | select(
+                ((.user.id | tostring) == \"$REQUESTER_ID\" and
+                 (.body == \"SunStupic: @codex review\" or (.body | startswith(\"@codex\"))))
+                or
+                (.user.login == \"chatgpt-codex-connector\" and (.body | startswith(\"To use Codex here\")))
+              )
+            | .id
+          " | while read -r comment_id; do
+            [ -z "$comment_id" ] && continue
+            echo "Deleting comment $comment_id"
+            gh api -X DELETE "repos/$REPO/issues/comments/$comment_id"
+          done
