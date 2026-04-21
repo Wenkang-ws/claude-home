@@ -74,10 +74,16 @@ signal.signal(signal.SIGINT, forward_signal)
 # session (see poll-linear.mts RATE_LIMIT_PATTERN). The TUI output is
 # otherwise discarded — it's visible on claude.ai. On macOS, os.read
 # returns b'' (EOF) instead of raising OSError when the PTY slave closes.
-RATE_LIMIT_RE = re.compile(rb"You(?:'|\xe2\x80\x99)ve hit your limit[^\r\n]*", re.IGNORECASE)
+# Require a trailing \r or \n so we only match a complete banner line —
+# partial matches (before "resets <time>" arrives in a later read) would
+# terminate the child early and break parseRateLimitResetTime.
+RATE_LIMIT_RE = re.compile(
+    rb"You(?:'|\xe2\x80\x99)ve hit your limit[^\r\n]*[\r\n]", re.IGNORECASE
+)
 ANSI_RE = re.compile(rb"\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b\][^\x07]*\x07|[\x00-\x08\x0b-\x1f]")
 SCAN_BUF_MAX = 8192
-scan_buf = b""
+scan_buf = b""  # raw bytes — ANSI is stripped on the whole buffer each iter
+                # so escape sequences split across reads are handled cleanly.
 
 while True:
     try:
@@ -86,15 +92,14 @@ while True:
             break
     except OSError:
         break
-    # Strip ANSI escape sequences and control bytes before matching so that
-    # cursor-positioning codes in the TUI don't break the pattern.
-    scan_buf = (scan_buf + ANSI_RE.sub(b"", data))[-SCAN_BUF_MAX:]
-    m = RATE_LIMIT_RE.search(scan_buf)
+    scan_buf = (scan_buf + data)[-SCAN_BUF_MAX:]
+    m = RATE_LIMIT_RE.search(ANSI_RE.sub(b"", scan_buf))
     if m:
         # Write the cleaned matched line to stdout so it lands in
         # symphony-<ticket>.log where the poller can grep it.
+        line = m.group(0).rstrip(b"\r\n")
         try:
-            os.write(1, m.group(0) + b"\n")
+            os.write(1, line + b"\n")
         except OSError:
             pass
         try:
