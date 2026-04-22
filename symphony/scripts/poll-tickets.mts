@@ -681,6 +681,56 @@ function setupInteractiveCommands(): void {
   rl.on('close', () => {});
 }
 
+// ── Hot reload on script / config change ─────────────────────────────────────
+
+/**
+ * Watch scripts/ and config/ for changes and re-exec the poller.
+ * The child waits for this PID to exit before starting, so it never races
+ * the singleton PID lock. Running agent subprocesses are left intact —
+ * the new poller's activePidFile + isPidAlive check prevents duplicate spawns.
+ */
+let reloadScheduled = false;
+let reloadTimer: NodeJS.Timeout | null = null;
+
+function reloadNow(reason: string): void {
+  if (reloadScheduled) return;
+  reloadScheduled = true;
+  log(chalk.yellow(`[${timestamp()}] ⟳ Hot reload: ${reason} — restarting poller`));
+
+  const quote = (s: string) => `'${s.replace(/'/g, `'\\''`)}'`;
+  const cmd = [process.execPath, ...process.argv.slice(1)].map(quote).join(' ');
+  const pid = process.pid;
+  child_process.spawn(
+    'sh',
+    ['-c', `while kill -0 ${pid} 2>/dev/null; do sleep 0.2; done; exec ${cmd}`],
+    { detached: true, stdio: 'ignore', cwd: process.cwd() }
+  ).unref();
+
+  setTimeout(() => process.exit(0), 100);
+}
+
+function setupHotReload(): void {
+  const watchDirs = [
+    path.join(SYMPHONY_ROOT, 'scripts'),
+    path.join(CONFIG_DIR),
+  ];
+  const ignore = /(^\.|~$|\.swp$|\.tmp$)/;
+  for (const dir of watchDirs) {
+    if (!fs.existsSync(dir)) continue;
+    try {
+      fs.watch(dir, { recursive: true, persistent: false }, (_event, filename) => {
+        if (!filename) return;
+        const base = path.basename(filename.toString());
+        if (ignore.test(base)) return;
+        if (reloadTimer) clearTimeout(reloadTimer);
+        reloadTimer = setTimeout(() => reloadNow(filename.toString()), 500);
+      });
+    } catch (err) {
+      log(chalk.yellow(`[symphony] Hot reload disabled for ${dir}: ${(err as Error).message}`));
+    }
+  }
+}
+
 // ── Poller singleton lock ─────────────────────────────────────────────────────
 
 {
@@ -1451,6 +1501,7 @@ console.log(
 console.log('');
 
 setupInteractiveCommands();
+setupHotReload();
 
 while (true) {
   // If a rate-limit pause is active, sleep in-place until the window expires
