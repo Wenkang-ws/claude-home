@@ -78,6 +78,8 @@ cd ~/symphony && node --experimental-strip-types scripts/poll-tickets.mts --dry-
 
 Only one poller instance is allowed. If already running, it will print the existing PID and exit.
 
+The poller watches `scripts/` and `config/` and hot-reloads itself on any change — edit a script or config file and it will re-exec automatically. Running agent subprocesses are preserved across the restart (the PID-file check prevents duplicate spawns).
+
 ## Board config schema
 
 Each board file (`config/boards/*.json`) defines:
